@@ -1,0 +1,15 @@
+[Unit]
+Description=PVCharge service
+After=multi-user.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/PVCharge
+ExecStart=/home/pi/PVCharge/.venv/bin/python3 /home/pi/PVCharge/PVCharge.py
+SyslogIdentifier=PVCharge
+Type=idle
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
