@@ -35,7 +35,9 @@ tesla-control -ble add-key-request public_key.pem owner cloud_key</pre>
 sudo apt install python-pip git
 git clone https://github.com/sftman18/PVCharge.git
 In the PVCharge directory:
-sudo pip install -r requirements.txt</pre>
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt</pre>
 
 ## Configuration
 Create your own copy of example.env
