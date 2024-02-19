@@ -1,54 +1,50 @@
 # PVCharge
-PVCharge adjusts charging rate based on generated solar energy
-<img src="energy_graph.png">
 
-Requirements:
--Tesla vehicle
--TeslaMate: https://github.com/teslamate-org/teslamate
--eGauge solar monitoring: https://www.egauge.net
-Optional:
--Home Assistant or other MQTT client to change prevent_non_solar_charge option
+# PVCharge adjusts charging rate based on generated solar energy
 
+<img src="energy_graph.png" alt="PV Energy Graph">
 
-PVCharge uses Tesla's Vehicle Command SDK, to communicate with your car over local Bluetooth
-https://github.com/teslamotors/vehicle-command
+## Requirements:
+* Tesla vehicle
+* <a href="https://github.com/teslamate-org/teslamate">TeslaMate</a>
+* <a href="https://www.egauge.net">eGauge solar monitoring, with a CT on the charger circuit</a>
+* Linux computer with Bluetooth, such as a <a href="https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/">Raspberry Pi Zero 2 W</a>
 
-git clone https://github.com/teslamotors/vehicle-command.git
+## Optional:
+* <a href="https://www.home-assistant.io/">Home Assistant</a> or another <a href="https://apps.apple.com/us/app/mqttool/id1085976398">MQTT client</a> to adjust the MQTT option for after-dark charging
 
-To support Waking over BLE, please apply this fix: https://github.com/teslamotors/vehicle-command/pull/106
+## Tesla Vehicle Command SDK
 
-Golang support install: https://pimylifeup.com/raspberry-pi-golang/
+PVCharge uses the <a href="https://github.com/teslamotors/vehicle-command">Tesla Vehicle Command SDK</a>, to communicate with your car over local Bluetooth
 
-(Use arm64 for 64bit Pi OS)
-wget https://go.dev/dl/go1.22.0.linux-arm64.tar.gz -O go.tar.gz
-sudo tar -C /usr/local -xzf go.tar.gz
+Note: To support Waking over BLE, please apply this <a href="https://github.com/teslamotors/vehicle-command/pull/106">PR:106</a>
 
-Add these lines to the bottom of ~/.bashrc
-`export GOPATH=$HOME/go`
-`export PATH=/usr/local/go/bin:$PATH:$GOPATH/bin`
-`export TESLA_KEY_NAME=pi`
-`export TESLA_VIN=<vehicle VIN>`
-`export TESLA_KEY_FILE=$HOME/.local/share/keyrings/private_key.pem`
+Here are a few hints to help complete the tesla-command installation:
 
-Source ~/.bashrc
-
-From ~/vehicle-command/cmd/tesla-control
-go get
-go build
-go install
-From ~/vehicle-command/cmd/tesla-keygen
-go get
-go build
-go install
-
-Binaries are now located ~/go/bin
-
-Create the directory "keyrings" to hold your private key
+<pre>Create the directory "keyrings" to hold your private key
 mkdir /home/pi/.local/share/keyrings
 
 Setting the key
 tesla-keygen -key-file /home/pi/.local/share/keyrings/private_key.pem create > public_key.pem
 
-When in the car, pair with this command:
-tesla-control -ble add-key-request public_key.pem owner cloud_key
+While in the car, pair with this command:
+tesla-control -ble add-key-request public_key.pem owner cloud_key</pre>
 
+## PVCharge Installation
+<pre>Install a few essential libraries:
+sudo apt install python-pip git
+git clone https://github.com/sftman18/PVCharge.git
+In the PVCharge directory:
+sudo pip install -r requirements.txt</pre>
+
+## Configuration
+Create your own copy of example.env
+<pre>cp example.env .env
+Change all values to match your equipment settings</pre>
+Copy included PVCharge.service to the proper path (systemd shown)
+<pre>sudo cp PVCharge.service /etc/systemd/system/</pre>
+Activate the service and start it:
+<pre>sudo systemctl enable PVCharge.service
+sudo systemctl start PVCharge.service</pre>
+Check to ensure it is running:
+<pre>sudo systemctl status PVCharge.service</pre>
