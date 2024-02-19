@@ -1,6 +1,6 @@
 # PVCharge
 PVCharge adjusts charging rate based on generated solar energy
-
+<img src="energy_graph.png">
 
 Requirements:
 -Tesla vehicle
@@ -24,11 +24,11 @@ wget https://go.dev/dl/go1.22.0.linux-arm64.tar.gz -O go.tar.gz
 sudo tar -C /usr/local -xzf go.tar.gz
 
 Add these lines to the bottom of ~/.bashrc
-export GOPATH=$HOME/go
-export PATH=/usr/local/go/bin:$PATH:$GOPATH/bin
-export TESLA_KEY_NAME=pi
-export TESLA_VIN=<vehicle VIN>
-export TESLA_KEY_FILE=$HOME/.local/share/keyrings/private_key.pem
+`export GOPATH=$HOME/go`
+`export PATH=/usr/local/go/bin:$PATH:$GOPATH/bin`
+`export TESLA_KEY_NAME=pi`
+`export TESLA_VIN=<vehicle VIN>`
+`export TESLA_KEY_FILE=$HOME/.local/share/keyrings/private_key.pem`
 
 Source ~/.bashrc
 
@@ -51,3 +51,4 @@ tesla-keygen -key-file /home/pi/.local/share/keyrings/private_key.pem create > p
 
 When in the car, pair with this command:
 tesla-control -ble add-key-request public_key.pem owner cloud_key
+
