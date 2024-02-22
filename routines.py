@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 import math
+import logging
 from time import sleep
 from dotenv import load_dotenv
 from egauge import webapi
@@ -38,21 +39,29 @@ class PowerUsage:
         try:
             rights = self.my_eGauge.get("/auth/rights").get("rights", [])
         except webapi.Error as e:
-            print(f"Sorry, failed to connect to {self.meter_dev}: {e}")
+            #print(f"Sorry, failed to connect to {self.meter_dev}: {e}")
+            logging.critical(f"Sorry, failed to connect to {self.meter_dev}: {e}")
             sys.exit(1)
-        print(f"Connected to eGauge {self.meter_dev} (user {self.meter_user}, rights={rights})")
+        #print(f"Connected to eGauge {self.meter_dev} (user {self.meter_user}, rights={rights})")
+        logging.info(f"Connected to eGauge {self.meter_dev} (user {self.meter_user}, rights={rights})")
 
     def sample_register(self):
+        """Sample registers and convert kW to W"""
         self.register_sample = Register(self.my_eGauge, {"rate": "True", "time": "now"})
         self.generation_reg = self.register_sample.pq_rate(self.eGauge_gen).value * 1000
+        logging.debug(f"Generation reg: {self.generation_reg}")
         self.usage_reg = self.register_sample.pq_rate(self.eGauge_use).value * 1000
+        logging.debug(f"Usage reg: {self.usage_reg}")
         self.tesla_charger_reg = self.register_sample.pq_rate(self.eGauge_charger).value * 1000
+        logging.debug(f"Tesla charger reg: {self.tesla_charger_reg}")
 
     def sample_sensor(self):
         self.sensor_sample = Local(self.my_eGauge, "l=L1:L2&s=all")
         self.charger_voltage_sensor = (self.sensor_sample.rate("L1", "n") +
                                        self.sensor_sample.rate("L2", "n"))
+        logging.debug(f"Charger voltage sensor: {self.charger_voltage_sensor}")
         self.charge_rate_sensor = self.sensor_sample.rate(self.eGauge_charger_sensor, "n")
+        logging.debug(f"Charge rate sensor: {self.charge_rate_sensor}")
 
     def calculate_charge_rate(self, new_sample):
         if new_sample:
@@ -61,6 +70,7 @@ class PowerUsage:
         # Calculate the charge rate
         self.new_charge_rate = ((self.generation_reg - (self.usage_reg - self.tesla_charger_reg)) /
                                 self.charger_voltage_sensor)
+        logging.debug(f"New charge rate: {self.new_charge_rate}")
         return self.new_charge_rate
 
     def verify_new_charge_rate(self, new_charge_rate):
@@ -75,6 +85,7 @@ class PowerUsage:
 
     def sufficient_generation(self, min_charge):
         charge_rate = math.floor(self.calculate_charge_rate(new_sample=True))
+        logging.debug(f"New charge rate (floor): {charge_rate}")
         #print("Charge rate:", charge_rate)
         if charge_rate >= min_charge:
             return True
@@ -110,32 +121,39 @@ class TeslaCommands:
     def set_charge_rate(self, charge_rate):
         command = self.tesla_base_command + ['charging-set-amps']
         command.append(str(charge_rate))
-        print(command)
+        logging.info(command)
+        #print(command)
         return call_sub_error_handler(command)
 
     def start_charging(self):
         command = self.tesla_base_command + ['charging-start']
-        print(command)
+        logging.info(command)
+        #print(command)
         return call_sub_error_handler(command)
 
     def stop_charging(self):
         command = self.tesla_base_command + ['charging-stop']
-        print(command)
+        logging.info(command)
+        #print(command)
         return call_sub_error_handler(command)
 
     def wake(self):
         command = self.tesla_base_command + ['-domain', 'vcsec', 'wake']
-        print(command)
+        logging.info(command)
+        #print(command)
         return call_sub_error_handler(command)
 
 
 def call_sub_error_handler(cmd):
     try:
         result = subprocess.run(args=cmd, capture_output=True, text=True, check=True)
-        print(result.stdout)
+        logging.info(result.stdout)
+        #print(result.stdout)
     except subprocess.CalledProcessError as error:
-        print("An exception occurred:", type(error).__name__, "–", error)
-        print(error.stderr)
+        logging.warning(f"An exception occurred:{type(error).__name__} - {error}")
+        logging.warning(error.stderr)
+        #print("An exception occurred:", type(error).__name__, "–", error)
+        #print(error.stderr)
         return False
     return True
 
@@ -168,7 +186,8 @@ class MqttCallbacks:
 
     def on_connect(self, client, userdata, flags, reason_code, properties):
         if reason_code != 0:
-            print("Failed to connect, return code %d\n", reason_code)
+            #print("Failed to connect, return code %d\n", reason_code)
+            logging.critical(f"Failed to connect, return code {reason_code}\n")
             sys.exit(1)
         self.client.subscribe(topic=self.topic_prevent_non_solar_charge, qos=1)
         self.client.subscribe(topic=self.topic_teslamate_geofence, qos=1)
