@@ -1,13 +1,11 @@
-# PVCharge
-
-# PVCharge adjusts charging rate based on generated solar energy
+# PVCharge adjusts charge rate to match generation
 
 <img src="energy_graph.png" alt="PV Energy Graph">
 
 ## Requirements:
 * Tesla vehicle
 * <a href="https://github.com/teslamate-org/teslamate">TeslaMate</a>
-* <a href="https://www.egauge.net">eGauge solar monitoring, with a CT on the charger circuit</a>
+* <a href="https://www.egauge.net">eGauge solar monitoring, with CT on the charger circuit</a>
 * Linux computer with Bluetooth, such as a <a href="https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/">Raspberry Pi Zero 2 W</a>
 
 ## Optional:
@@ -31,22 +29,39 @@ While in the car, pair with this command:
 tesla-control -ble add-key-request public_key.pem owner cloud_key</pre>
 
 ## PVCharge Installation
-<pre>Install a few essential libraries:
-sudo apt install python-pip git
-git clone https://github.com/sftman18/PVCharge.git
-In the PVCharge directory:
-python -m venv .venv
+#### Install Python and Git using your package manager
+#### Clone the repo<code>git clone https://github.com/sftman18/PVCharge.git</code>
+#### In the PVCharge directory, setup the virtual environment and install the requirements
+<pre>python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt</pre>
 
 ## Configuration
-Create your own copy of example.env
+#### Create your own copy of example.env
 <pre>cp example.env .env
 Change all values to match your equipment settings</pre>
-Copy included PVCharge.service to the proper path (systemd shown)
+#### Copy included PVCharge.service to the proper path (systemd shown)
 <pre>sudo cp PVCharge.service /etc/systemd/system/</pre>
-Activate the service and start it:
+#### Activate the service and start it:
 <pre>sudo systemctl enable PVCharge.service
 sudo systemctl start PVCharge.service</pre>
-Check to ensure it is running:
+#### Check to ensure it is running:
 <pre>sudo systemctl status PVCharge.service</pre>
+
+## Usage
+#### PVCharge waits for 3 conditions to be communicated over MQTT from <a href="https://docs.teslamate.org/docs/integrations/mqtt">Teslamate</a>
+* Car location is "Home" <code>teslamate/cars/$car_id/geofence</code>
+* Car is plugged in <code>teslamate/cars/$car_id/plugged_in</code>
+* Car battery level below 80% <code>teslamate/cars/$car_id/battery_level</code>
+
+## Status
+#### PVCharge publishes status on MQTT
+* Charging report <code>topic_base/status</code>
+
+
+## Control
+#### The behavior of after-hours charging is controlled by MQTT: <code>topic_base/prevent_non_solar_charging</code><br>
+<dl>
+<dt>True</dt> <dd>PVCharge will prevent charging when insufficient PV output is available</dd>
+<dt>False</dt> <dd>PVCharge will ignore charging when insufficient PV output is available</dd>
+</dl>
