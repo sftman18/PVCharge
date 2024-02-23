@@ -47,9 +47,9 @@ class PowerUsage:
         """Sample registers and convert kW to W"""
         self.register_sample = Register(self.my_eGauge, {"rate": "True", "time": "now"})
         self.generation_reg = self.register_sample.pq_rate(self.eGauge_gen).value * 1000
-        logging.debug(f"Generation reg: {self.generation_reg}")
+        logging.debug(f"   Generation reg: {self.generation_reg}")
         self.usage_reg = self.register_sample.pq_rate(self.eGauge_use).value * 1000
-        logging.debug(f"Usage reg: {self.usage_reg}")
+        logging.debug(f"        Usage reg: {self.usage_reg}")
         self.tesla_charger_reg = self.register_sample.pq_rate(self.eGauge_charger).value * 1000
         logging.debug(f"Tesla charger reg: {self.tesla_charger_reg}")
 
@@ -59,7 +59,7 @@ class PowerUsage:
                                        self.sensor_sample.rate("L2", "n"))
         logging.debug(f"Charger voltage sensor: {self.charger_voltage_sensor}")
         self.charge_rate_sensor = self.sensor_sample.rate(self.eGauge_charger_sensor, "n")
-        logging.debug(f"Charge rate sensor: {self.charge_rate_sensor}")
+        logging.debug(f"    Charge rate sensor: {self.charge_rate_sensor}")
 
     def calculate_charge_rate(self, new_sample):
         if new_sample:
@@ -119,32 +119,33 @@ class TeslaCommands:
     def set_charge_rate(self, charge_rate):
         command = self.tesla_base_command + ['charging-set-amps']
         command.append(str(charge_rate))
-        logging.info(command)
+        logging.debug(command)
         return call_sub_error_handler(command)
 
     def start_charging(self):
         command = self.tesla_base_command + ['charging-start']
-        logging.info(command)
+        logging.debug(command)
         return call_sub_error_handler(command)
 
     def stop_charging(self):
         command = self.tesla_base_command + ['charging-stop']
-        logging.info(command)
+        logging.debug(command)
         return call_sub_error_handler(command)
 
     def wake(self):
         command = self.tesla_base_command + ['-domain', 'vcsec', 'wake']
-        logging.info(command)
+        logging.debug(command)
         return call_sub_error_handler(command)
 
 
 def call_sub_error_handler(cmd):
     try:
         result = subprocess.run(args=cmd, capture_output=True, text=True, check=True)
-        logging.info(result.stdout)
+        if result.stdout != "":
+            logging.debug(result.stdout)
     except subprocess.CalledProcessError as error:
-        logging.warning(f"An exception occurred:{type(error).__name__} - {error}")
-        logging.warning(error.stderr)
+        logging.warning(f"{type(error).__name__} - {error}")
+        logging.warning(f"Error: {error.stderr}")
         return False
     return True
 
