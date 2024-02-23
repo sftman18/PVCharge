@@ -30,7 +30,7 @@ tesla-control -ble add-key-request public_key.pem owner cloud_key</pre>
 
 ## PVCharge Installation
 #### Install Python and Git using your package manager
-#### Clone the repo <code>git clone https://github.com/sftman18/PVCharge.git</code>
+#### Clone the repo <pre>git clone https://github.com/sftman18/PVCharge.git</pre>
 #### In the PVCharge directory, configure the Python virtual environment and install the requirements
 <pre>python -m venv .venv
 source .venv/bin/activate
