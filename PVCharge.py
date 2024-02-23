@@ -11,7 +11,6 @@ load_dotenv()
 topic_status = os.getenv("TOPIC_STATUS")
 topic_charge_rate = os.getenv("TOPIC_CHARGE_RATE")
 
-#logging.basicConfig(format='%(message)s', level=logging.INFO)
 #filename = 'PVCharge.log',
 logging.basicConfig(
     level=logging.DEBUG,
@@ -41,25 +40,26 @@ stop_charging_count = 0
 while True:
     # Check if we are allowed to charge
     charge_tesla = Messages.calculate_charge_tesla()
+    logging.debug(f"Current calculated charge enable: {charge_tesla}")
     prevent_non_solar_charge = Messages.var_topic_prevent_non_solar_charge
-    #print("New command, charge: " + str(charge_tesla))
+    logging.debug(f"Current prevent non_solar charge: {prevent_non_solar_charge}")
 
     if not charge_tesla:
         for poll in range(0, SLOW_POLLING, SLOW_POLLING_CHK):   # While waiting ensure that the car isn't charging
             if prevent_non_solar_charge:
                 logging.info("Slow poll wait, ensure car isn't charging")
-                #print("Sample, wait")
                 Energy.sample_sensor()
                 if round(Energy.charge_rate_sensor) >= MIN_CHARGE:
                     if Car.stop_charging():     # Stop if it is charging
                         logging.info("Slow poll, Car discovered charging and was stopped successfully")
                     else:
                         logging.warning("Slow poll, Car discovered charging and was NOT stopped successfully")
+            else:
+                logging.info("Slow poll wait, ignore charging")
             sleep(SLOW_POLLING_CHK)
         if report_due_slow >= report_delay_slow:
             status = Energy.status_report(charge_tesla, car_is_charging, new_sample=True)
             logging.info("Slow poll status:{status}")
-            #print(status)
             Messages.client.publish(topic=topic_status, payload=status, qos=1)
             report_due_slow = 0
         report_due_slow += 1
@@ -73,15 +73,12 @@ while True:
                 # Use math.floor() on calculate_charge_rate to ensure we are always just "under" the available PV generation capacity
                 # Use round() on charge_rate_sensor to prevent constant requests when on the edge of a value
                 new_charge_rate = math.floor(Energy.calculate_charge_rate(new_sample=False))
-                #print("Calculated charge rate: ", new_charge_rate)
-                #print("Current rate: ", round(Energy.charge_rate_sensor))
                 logging.info(f"Car charging, new rate calculated:{new_charge_rate}, current rate:{round(Energy.charge_rate_sensor)}")
                 if new_charge_rate != round(Energy.charge_rate_sensor):
                     # Set new charge rate
                     if Car.set_charge_rate(new_charge_rate):
                         if Energy.verify_new_charge_rate(new_charge_rate):
                             logging.info(f"Car charging, new rate:{new_charge_rate} successfully set")
-                            #print("New charge rate confirmed: ", new_charge_rate)
                             Messages.client.publish(topic=topic_charge_rate, payload=new_charge_rate, qos=1)
                     else:
                         logging.warning("Car charging, new rate was NOT successfully set")
@@ -92,16 +89,13 @@ while True:
                     if Car.set_charge_rate(MIN_CHARGE):
                         if Energy.verify_new_charge_rate(MIN_CHARGE):
                             logging.info(f"Car charging, Sun Reduced, new rate:{MIN_CHARGE} successfully set")
-                            #print("New charge rate confirmed: ", MIN_CHARGE)
                             Messages.client.publish(topic=topic_charge_rate, payload=MIN_CHARGE, qos=1)
                     else:
                         logging.warning(f"Car charging, Sun Reduced, new rate was NOT successfully set")
                 else:    # We are already at min charge, begin stopping sequence
                     stop_charging_count += 1
                     logging.info(f"Car charging, Sun Reduced, charging at min rate, stopping count:{stop_charging_count}")
-                    #print("Do we need to stop? ", stop_charging_count)
                     if stop_charging_count >= 30:
-                        #print("Need to stop charging")
                         if Car.stop_charging():
                             logging.info(f"Car charging, Sun Reduced, charging was successfully stopped")
                             car_is_charging = False
@@ -114,13 +108,10 @@ while True:
                 if round(Energy.charge_rate_sensor) < MIN_CHARGE:	   # Make sure car isn’t already charging
                     start_charging_count += 1
                     logging.info(f"Car is NOT charging, Sun is Available, starting count:{start_charging_count}")
-                    #print("Do we start? ", start_charging_count)
                     if start_charging_count >= 5:
-                        print("Waking car")
                         if Car.wake():
                             logging.info(f"Car is NOT charging, Sun is Available, car woken successfully")
                             sleep(5)    # Wait until car is awake
-                            print("Start charging")
                             if Car.start_charging():
                                 logging.info(f"Car Started Charging Successfully")
                                 sleep(10)    # Wait until charging is fully started
@@ -149,7 +140,6 @@ while True:
     else:    # We aren't allowed to charge
         if car_is_charging:
             logging.info(f"Car not allowed to charge, stopping charge")
-            #print("Need to stop charging")
             Car.set_charge_rate(MIN_CHARGE)    # Set charge rate to min charge, to reset for next time
             if Car.stop_charging():    # Command will fail if charging has already stopped
                 logging.info(f"Charge Stopping, stopped successfully")
@@ -160,7 +150,6 @@ while True:
     if report_due_fast >= report_delay_fast:
         status = Energy.status_report(charge_tesla, car_is_charging, new_sample=True)
         logging.info("Fast poll status:{status}")
-        #print(status)
         Messages.client.publish(topic=topic_status, payload=status, qos=1)
         report_due_fast = 0
     report_due_fast += 1

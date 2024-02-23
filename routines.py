@@ -195,24 +195,28 @@ class MqttCallbacks:
         self.client.subscribe(topic=self.topic_teslamate_battery_level, qos=1)
 
     def on_message_prevent_non_solar_charge(self, client, userdata, msg):
+        logging.debug(msg.payload.decode('utf-8'))
         if msg.payload.decode("utf-8") == "True":
             self.var_topic_prevent_non_solar_charge = True
         else:  # All messages not matching "True" mapped to "False"
             self.var_topic_prevent_non_solar_charge = False
 
     def on_message_geofence(self, client, userdata, msg):
+        logging.debug(msg.payload.decode('utf-8'))
         if msg.payload.decode("utf-8") == "Home":
             self.var_topic_teslamate_geofence = True
         else:  # All messages not matching "Home" mapped to "False"
             self.var_topic_teslamate_geofence = False
 
     def on_message_plugged_in(self, client, userdata, msg):
+        logging.debug(msg.payload.decode('utf-8'))
         if msg.payload.decode("utf-8") == "true":
             self.var_topic_teslamate_plugged_in = True
         else:
             self.var_topic_teslamate_plugged_in = False
 
     def on_message_battery_level(self, client, userdata, msg):
+        logging.debug(msg.payload.decode('utf-8'))
         self.var_topic_teslamate_battery_level = int(msg.payload.decode("utf-8"))
 
     def calculate_charge_tesla(self):
