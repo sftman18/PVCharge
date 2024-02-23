@@ -59,7 +59,7 @@ while True:
             sleep(SLOW_POLLING_CHK)
         if report_due_slow >= report_delay_slow:
             status = Energy.status_report(charge_tesla, car_is_charging, new_sample=True)
-            logging.info("Slow poll status:{status}")
+            logging.info(f"Slow poll status:{status}")
             Messages.client.publish(topic=topic_status, payload=status, qos=1)
             report_due_slow = 0
         report_due_slow += 1
@@ -149,7 +149,7 @@ while True:
 
     if report_due_fast >= report_delay_fast:
         status = Energy.status_report(charge_tesla, car_is_charging, new_sample=True)
-        logging.info("Fast poll status:{status}")
+        logging.info(f"Fast poll status:{status}")
         Messages.client.publish(topic=topic_status, payload=status, qos=1)
         report_due_fast = 0
     report_due_fast += 1

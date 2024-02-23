@@ -39,10 +39,8 @@ class PowerUsage:
         try:
             rights = self.my_eGauge.get("/auth/rights").get("rights", [])
         except webapi.Error as e:
-            #print(f"Sorry, failed to connect to {self.meter_dev}: {e}")
             logging.critical(f"Sorry, failed to connect to {self.meter_dev}: {e}")
             sys.exit(1)
-        #print(f"Connected to eGauge {self.meter_dev} (user {self.meter_user}, rights={rights})")
         logging.info(f"Connected to eGauge {self.meter_dev} (user {self.meter_user}, rights={rights})")
 
     def sample_register(self):
@@ -78,15 +76,15 @@ class PowerUsage:
             self.sample_sensor()
             # Use round() on the verify step (vs math.floor()) to prevent constant requests for the same value
             if round(self.charge_rate_sensor) >= new_charge_rate:
+                logging.debug(f"New charge rate verified")
                 return True
             sleep(0.5)
-
+        logging.debug(f"New charge rate NOT verified")
         return False
 
     def sufficient_generation(self, min_charge):
         charge_rate = math.floor(self.calculate_charge_rate(new_sample=True))
         logging.debug(f"New charge rate (floor): {charge_rate}")
-        #print("Charge rate:", charge_rate)
         if charge_rate >= min_charge:
             return True
         else:
@@ -122,25 +120,21 @@ class TeslaCommands:
         command = self.tesla_base_command + ['charging-set-amps']
         command.append(str(charge_rate))
         logging.info(command)
-        #print(command)
         return call_sub_error_handler(command)
 
     def start_charging(self):
         command = self.tesla_base_command + ['charging-start']
         logging.info(command)
-        #print(command)
         return call_sub_error_handler(command)
 
     def stop_charging(self):
         command = self.tesla_base_command + ['charging-stop']
         logging.info(command)
-        #print(command)
         return call_sub_error_handler(command)
 
     def wake(self):
         command = self.tesla_base_command + ['-domain', 'vcsec', 'wake']
         logging.info(command)
-        #print(command)
         return call_sub_error_handler(command)
 
 
@@ -148,12 +142,9 @@ def call_sub_error_handler(cmd):
     try:
         result = subprocess.run(args=cmd, capture_output=True, text=True, check=True)
         logging.info(result.stdout)
-        #print(result.stdout)
     except subprocess.CalledProcessError as error:
         logging.warning(f"An exception occurred:{type(error).__name__} - {error}")
         logging.warning(error.stderr)
-        #print("An exception occurred:", type(error).__name__, "–", error)
-        #print(error.stderr)
         return False
     return True
 
@@ -186,13 +177,16 @@ class MqttCallbacks:
 
     def on_connect(self, client, userdata, flags, reason_code, properties):
         if reason_code != 0:
-            #print("Failed to connect, return code %d\n", reason_code)
             logging.critical(f"Failed to connect, return code {reason_code}\n")
             sys.exit(1)
         self.client.subscribe(topic=self.topic_prevent_non_solar_charge, qos=1)
+        logging.debug(f"Subscribed to: {self.topic_prevent_non_solar_charge}")
         self.client.subscribe(topic=self.topic_teslamate_geofence, qos=1)
+        logging.debug(f"Subscribed to: {self.topic_teslamate_geofence}")
         self.client.subscribe(topic=self.topic_teslamate_plugged_in, qos=1)
+        logging.debug(f"Subscribed to: {self.topic_teslamate_plugged_in}")
         self.client.subscribe(topic=self.topic_teslamate_battery_level, qos=1)
+        logging.debug(f"Subscribed to: {self.topic_teslamate_battery_level}")
 
     def on_message_prevent_non_solar_charge(self, client, userdata, msg):
         logging.debug(msg.payload.decode('utf-8'))
