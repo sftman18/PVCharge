@@ -3,9 +3,9 @@
 <img src="energy_graph.png" alt="PV Energy Graph">
 
 ## Requirements:
-* Tesla vehicle
+* <a href="https://www.tesla.com/">Tesla vehicle</a>
 * <a href="https://github.com/teslamate-org/teslamate">TeslaMate</a>
-* <a href="https://www.egauge.net">eGauge solar monitoring, with CT on the charger circuit</a>
+* <a href="https://www.egauge.net">eGauge solar monitoring, with a CT on the charger circuit</a>
 * Linux computer with Bluetooth, such as a <a href="https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/">Raspberry Pi Zero 2 W</a>
 
 ## Optional:
@@ -31,7 +31,7 @@ tesla-control -ble add-key-request public_key.pem owner cloud_key</pre>
 ## PVCharge Installation
 #### Install Python and Git using your package manager
 #### Clone the repo<code>git clone https://github.com/sftman18/PVCharge.git</code>
-#### In the PVCharge directory, setup the virtual environment and install the requirements
+#### In the PVCharge directory, configure the Python virtual environment and install the requirements
 <pre>python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt</pre>
@@ -52,12 +52,14 @@ sudo systemctl start PVCharge.service</pre>
 #### PVCharge waits for 3 conditions to be communicated over MQTT from <a href="https://docs.teslamate.org/docs/integrations/mqtt">Teslamate</a>
 * Car location is "Home" <code>teslamate/cars/$car_id/geofence</code>
 * Car is plugged in <code>teslamate/cars/$car_id/plugged_in</code>
-* Car battery level below 80% <code>teslamate/cars/$car_id/battery_level</code>
+* Car battery level below 80% <code>teslamate/cars/$car_id/battery_level</code><br>
+#### When those conditions are satisfied, it will attempt to start charging
+#### As available PV output changes throughout the day, charging rate will be adjusted
 
 ## Status
 #### PVCharge publishes status on MQTT
 * Charging report <code>topic_base/status</code>
-
+* Current charge rate <code>topic_base/new_charge_rate</code>
 
 ## Control
 #### The behavior of after-hours charging is controlled by MQTT: <code>topic_base/prevent_non_solar_charging</code><br>
