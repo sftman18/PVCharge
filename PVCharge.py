@@ -11,8 +11,8 @@ load_dotenv()
 topic_status = os.getenv("TOPIC_STATUS")
 topic_charge_rate = os.getenv("TOPIC_CHARGE_RATE")
 
-#filename = 'PVCharge.log',
 logging.basicConfig(
+    #filename = 'PVCharge.log',
     level=logging.DEBUG,
     format='%(asctime)s %(levelname)s %(module)s - %(funcName)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
