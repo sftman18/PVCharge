@@ -65,5 +65,5 @@ sudo systemctl start PVCharge.service</pre>
 #### The behavior of after-hours charging is controlled by MQTT: <code>topic_base/prevent_non_solar_charging</code><br>
 <dl>
 <dt>True</dt> <dd>PVCharge will prevent charging when insufficient PV output is available</dd>
-<dt>False</dt> <dd>PVCharge will ignore charging when insufficient PV output is available</dd>
+<dt>False</dt> <dd>PVCharge will ignore charging when insufficient PV output is available (default)</dd>
 </dl>

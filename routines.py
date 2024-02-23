@@ -161,7 +161,7 @@ class MqttCallbacks:
         self.topic_teslamate_geofence = os.getenv("TOPIC_TESLAMATE_GEOFENCE")
         self.topic_teslamate_plugged_in = os.getenv("TOPIC_TESLAMATE_PLUGGED_IN")
         self.topic_teslamate_battery_level = os.getenv("TOPIC_TESLAMATE_BATTERY_LEVEL")
-        self.var_topic_prevent_non_solar_charge = True
+        self.var_topic_prevent_non_solar_charge = False
         self.var_topic_teslamate_geofence = False
         self.var_topic_teslamate_plugged_in = False
         self.var_topic_teslamate_battery_level = 0
