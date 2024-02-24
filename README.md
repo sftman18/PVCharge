@@ -1,6 +1,6 @@
 # PVCharge
 
-An adaptive charger for your Tesla, enabling you to direct excess solar energy to your car.
+An adaptive charging controller for your Tesla, enabling you to direct excess solar energy to your car.
 
 ## Requirements
 - <a href="https://www.tesla.com/">Tesla vehicle</a>
