@@ -29,7 +29,7 @@ While in the car, pair with this command:
 tesla-control -ble add-key-request public_key.pem owner cloud_key</pre>
 
 ## PVCharge Installation
-- Install Python 3.12 and Git using your package manager<br>
+- Install Python (3.11-3.12) and Git using your package manager<br>
 - Clone the repo <pre>git clone https://github.com/sftman18/PVCharge.git</pre>
 - In the PVCharge directory, configure the Python virtual environment and install the requirements
 <pre>python -m venv .venv
