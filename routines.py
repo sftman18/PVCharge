@@ -4,12 +4,17 @@ import subprocess
 import math
 import logging
 from time import sleep
+import tomllib
 from dotenv import load_dotenv
 from egauge import webapi
 import paho.mqtt.client as mqtt
 from egauge.webapi.device import Register, Local
 
+# Load parameters from .env
 load_dotenv()
+# Load config file
+with open("config.toml", mode="rb") as fp:
+    config = tomllib.load(fp)
 
 
 class PowerUsage:
@@ -157,10 +162,11 @@ class MqttCallbacks:
         self.broker = os.getenv("BROKER")
         self.port = int(os.getenv("PORT"))
         self.client_id = os.getenv("CLIENT_ID")
-        self.topic_prevent_non_solar_charge = os.getenv("TOPIC_PREVENT_NON_SOLAR_CHARGE")
-        self.topic_teslamate_geofence = os.getenv("TOPIC_TESLAMATE_GEOFENCE")
-        self.topic_teslamate_plugged_in = os.getenv("TOPIC_TESLAMATE_PLUGGED_IN")
-        self.topic_teslamate_battery_level = os.getenv("TOPIC_TESLAMATE_BATTERY_LEVEL")
+        self.topic_prevent_non_solar_charge = config["TOPIC_PREVENT_NON_SOLAR_CHARGE"]
+        self.topic_teslamate_geofence = config["TOPIC_TESLAMATE_GEOFENCE"]
+        self.topic_teslamate_plugged_in = config["TOPIC_TESLAMATE_PLUGGED_IN"]
+        self.topic_teslamate_battery_level = config["TOPIC_TESLAMATE_BATTERY_LEVEL"]
+        self.max_charge_limit = config["MAX_CHARGE_LIMIT"]
         self.var_topic_prevent_non_solar_charge = False
         self.var_topic_teslamate_geofence = False
         self.var_topic_teslamate_plugged_in = False
@@ -215,9 +221,9 @@ class MqttCallbacks:
         self.var_topic_teslamate_battery_level = int(msg.payload.decode("utf-8"))
 
     def calculate_charge_tesla(self):
-        # Charge if: Car is at Home, Car is plugged in, and battery < 80%
+        # Charge if: Car is at Home, Car is plugged in, and battery < max_charge_limit
         if (self.var_topic_teslamate_geofence & self.var_topic_teslamate_plugged_in &
-                (self.var_topic_teslamate_battery_level < 80)):
+                (self.var_topic_teslamate_battery_level < self.max_charge_limit)):
             return True
         else:
             return False
