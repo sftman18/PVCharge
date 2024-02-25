@@ -87,7 +87,7 @@ while True:
                 if round(Energy.charge_rate_sensor) > config["MIN_CHARGE"]:    # If we are charging at anything greater than min charge
                     # Set charge rate to min charge
                     if Car.set_charge_rate(config["MIN_CHARGE"]):
-                        logging.info(f"Car charging, Available Energy Reduced, new rate: {config["MIN_CHARGE"]} successfully set")
+                        logging.info(f"Car charging, Available Energy Reduced, new rate: {config['MIN_CHARGE']} successfully set")
                         Messages.client.publish(topic=config["TOPIC_CHARGE_RATE"], payload=config["MIN_CHARGE"], qos=1)
                     else:
                         logging.warning(f"Car charging, Available Energy Reduced, new rate was NOT successfully set")
