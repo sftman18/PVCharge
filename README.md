@@ -37,9 +37,10 @@ source .venv/bin/activate
 pip install -r requirements.txt</pre>
 
 ## Configuration
-- Create your own copy of example.env
+- Create your own copy of example.env, and example_config.toml
 <pre>cp example.env .env
-Change all values to match your equipment settings</pre>
+cp example_config.toml config.toml
+Change all values to match your equipment settings and preferences</pre>
 - Copy included PVCharge.service to the proper path (systemd shown)
 <pre>sudo cp PVCharge.service /etc/systemd/system/</pre>
 - Activate the service and start it:
@@ -69,8 +70,7 @@ The behavior of after-hours charging is controlled by MQTT: <code>topic_base/pre
 </dl>
 
 ## Troubleshooting
-Enable more verbose logging by changing the logging level on line 15 of PVCharge.py<br>
-<code>level=logging.INFO  ==>>  level=logging.DEBUG</code>
+Enable more verbose logging by changing the LOG_LEVEL to DEBUG in config.toml<br>
 - Check PVCharge.log for any unexpected output
 
 ## Screenshot of adaptive charging seen through eGauge
