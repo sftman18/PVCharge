@@ -10,7 +10,7 @@ with open("config.toml", mode="rb") as fp:
     config = tomllib.load(fp)
 
 logging.basicConfig(
-    #filename=config["LOG_FILE"],
+    filename=config["LOG_FILE"],
     level=logging.INFO,
     format='%(asctime)s %(levelname)s %(module)s - %(funcName)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
