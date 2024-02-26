@@ -4,8 +4,9 @@ An adaptive charging controller for your Tesla, enabling you to direct excess so
 
 ## Requirements
 - <a href="https://www.tesla.com/">Tesla vehicle</a>
+- Configured <a href="https://github.com/teslamotors/vehicle-command">Tesla Vehicle Command SDK</a> environment
 - <a href="https://github.com/teslamate-org/teslamate">TeslaMate</a>
-- <a href="https://www.egauge.net">eGauge solar monitoring, with a CT on the charger circuit</a>
+- <a href="https://www.egauge.net">eGauge solar monitoring</a>, with a CT on the charger circuit
 - Linux computer with Bluetooth, such as a <a href="https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/">Raspberry Pi Zero 2 W</a>
 
 ## Optional
@@ -29,7 +30,7 @@ While in the car, pair with this command:
 tesla-control -ble add-key-request public_key.pem owner cloud_key</pre>
 
 ## PVCharge Installation
-- Install Python (3.11-3.12) and Git using your package manager<br>
+- Install Python (3.11+) and Git using your package manager<br>
 - Clone the repo <pre>git clone https://github.com/sftman18/PVCharge.git</pre>
 - In the PVCharge directory, configure the Python virtual environment and install the requirements
 <pre>python -m venv .venv
@@ -53,7 +54,7 @@ sudo systemctl start PVCharge.service</pre>
 PVCharge waits for 3 conditions to be communicated over MQTT from <a href="https://docs.teslamate.org/docs/integrations/mqtt">Teslamate</a>
 - Car location is "Home" <code>teslamate/cars/$car_id/geofence</code>
 - Car is plugged in <code>teslamate/cars/$car_id/plugged_in</code>
-- Car battery level below 80% <code>teslamate/cars/$car_id/battery_level</code><br>
+- Car battery level below 80% <code>teslamate/cars/$car_id/battery_level</code> (Configurable in config.toml)<br>
 #### When those conditions are satisfied, it will attempt to start charging
 #### As available PV output changes throughout the day, charging rate will be adjusted
 
