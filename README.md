@@ -4,7 +4,7 @@ An adaptive charging controller for your Tesla, enabling you to direct excess so
 
 ## Requirements
 - <a href="https://www.tesla.com/">Tesla vehicle</a>
-- Configured <a href="https://github.com/teslamotors/vehicle-command">Tesla Vehicle Command SDK</a> environment
+- Configured <a href="https://github.com/teslamotors/vehicle-command">Tesla Vehicle Command SDK</a> environment with <a href="https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control">tesla-control</a> available
 - <a href="https://github.com/teslamate-org/teslamate">TeslaMate</a>
 - <a href="https://www.egauge.net">eGauge solar monitoring</a>, with a CT on the charger circuit
 - Linux computer with Bluetooth, such as a <a href="https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/">Raspberry Pi Zero 2 W</a>
@@ -14,11 +14,11 @@ An adaptive charging controller for your Tesla, enabling you to direct excess so
 
 ## Tesla Vehicle Command SDK
 
-PVCharge uses the <a href="https://github.com/teslamotors/vehicle-command">Tesla Vehicle Command SDK</a>, to communicate with your car over local Bluetooth
+PVCharge uses <a href="https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control">tesla-control</a> in the <a href="https://github.com/teslamotors/vehicle-command">Tesla Vehicle Command SDK</a> to communicate with your car over local Bluetooth
 
 - Note: To support Waking over BLE, please apply this <a href="https://github.com/teslamotors/vehicle-command/pull/106">PR:106</a>
 
-Here are a few hints to help complete the tesla-command installation
+Here are a few hints to help complete the tesla-control installation
 
 <pre>Create the directory "keyrings" to hold your private key:
 mkdir /home/pi/.local/share/keyrings
