@@ -120,6 +120,12 @@ class TeslaCommands:
         self.tesla_control_bin = os.getenv("TESLA_CONTROL_BIN")
         self.tesla_key_file = os.getenv("TESLA_KEY_FILE")
         self.tesla_base_command = [self.tesla_control_bin, '-ble', '-key-file', self.tesla_key_file]
+        # Test for existence of tesla-control
+        if not os.path.exists(self.tesla_control_bin):
+            logging.critical(f"tesla-control not found at: {self.tesla_control_bin}")
+            logging.critical("Please point to it in config.toml, or install it from:")
+            logging.critical("https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control")
+            sys.exit(1)
 
     def set_charge_rate(self, charge_rate):
         command = self.tesla_base_command + ['charging-set-amps']
