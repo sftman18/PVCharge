@@ -123,7 +123,7 @@ class TeslaCommands:
         # Test for existence of tesla-control
         if not os.path.exists(self.tesla_control_bin):
             logging.critical(f"tesla-control not found at: {self.tesla_control_bin}")
-            logging.critical("Please point to it in config.toml, or install it from:")
+            logging.critical("Please point to it in .env, or install it from:")
             logging.critical("https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control")
             sys.exit(1)
 
