@@ -12,8 +12,11 @@ TOPIC_STATUS =      "topic_base/status"
 TOPIC_CHARGE_RATE = "topic_base/new_charge_rate"
 
 # Control loop parameters
-SLOW_POLLING = 30        # Charging disabled, control topic check interval (seconds)
-SLOW_POLLING_CHK = 5     # Charging disabled, prevent non-solar charge check interval (seconds)
-FAST_POLLING = 1         # Charging enabled, update rate (seconds)
 MIN_CHARGE = 7           # Slowest allowed charge rate (Amps)
 MAX_CHARGE_LIMIT = 80    # Max charge limit (%)
+SLOW_POLLING = 30        # Charging disabled, control topic check interval (seconds)
+SLOW_POLLING_CHK = 5     # Charging disabled, prevent non-solar charge check interval (seconds)
+FAST_POLLING = 1         # Charging enabled, loop delay (seconds)
+DELAYED_START_TIME = 30	 # When Energy is Available how long do we wait before starting charge (seconds)
+DELAYED_STOP_TIME = 90   # When Available Energy is Reduced how long do we wait before stopping charge (seconds)
+REPORT_DELAY = 60        # Send status string to MQTT every x (seconds), delayed by as much as SLOW_POLLING_CHK when charging disabled
