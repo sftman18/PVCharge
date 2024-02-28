@@ -103,7 +103,7 @@ while True:
                         else:
                             logging.warning(f"Car charging, Available Energy Reduced, charging was NOT successfully stopped")
                     else:
-                        logging.info(f"Car charging, Available Energy Reduced, charging at min rate, stopping in: {config['DELAYED_STOP_TIME'] - loop_time - stop_charging_time} seconds")
+                        logging.info(f"Car charging, Available Energy Reduced, charging at min rate, stopping in: {round(config['DELAYED_STOP_TIME'] - (loop_time - stop_charging_time))} seconds")
 
         else:    # Car isn't charging, should it be?
             if Energy.sufficient_generation(config["MIN_CHARGE"]):    # If we have enough sun to charge
@@ -127,7 +127,7 @@ while True:
                         else:
                             logging.warning(f"Car was NOT woken successfully")
                     else:
-                        logging.info(f"Car is NOT charging, Energy is Available, starting in: {config['DELAYED_START_TIME'] - loop_time - start_charging_time} seconds")
+                        logging.info(f"Car is NOT charging, Energy is Available, starting in: {round(config['DELAYED_START_TIME'] - (loop_time - start_charging_time))} seconds")
 
                 else:    # Car is already charging, set the flag
                     car_is_charging = True
