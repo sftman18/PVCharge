@@ -4,11 +4,12 @@ LOG_LEVEL = "INFO"                  # Default INFO, change to DEBUG to diagnose 
 PREVENT_NON_SOLAR_CHARGE = "False"  # Default for after-hours charging, unless changed via MQTT
 
 # MQTT Control topics
-TOPIC_PREVENT_NON_SOLAR_CHARGE = "topic_base/prevent_non_solar_charge"
-TOPIC_TESLAMATE_GEOFENCE =       "teslamate/cars/$car_id/geofence"
-TOPIC_TESLAMATE_PLUGGED_IN =     "teslamate/cars/$car_id/plugged_in"
-TOPIC_TESLAMATE_BATTERY_LEVEL =  "teslamate/cars/$car_id/battery_level"
-TOPIC_TESLAMATE_STATE =          "teslamate/cars/$car_id/state"
+TOPIC_PREVENT_NON_SOLAR_CHARGE =   "topic_base/prevent_non_solar_charge"
+TOPIC_TESLAMATE_GEOFENCE =         "teslamate/cars/$car_id/geofence"
+TOPIC_TESLAMATE_PLUGGED_IN =       "teslamate/cars/$car_id/plugged_in"
+TOPIC_TESLAMATE_BATTERY_LEVEL =    "teslamate/cars/$car_id/battery_level"
+TOPIC_TESLAMATE_STATE =            "teslamate/cars/$car_id/state"
+TOPIC_TESLAMATE_CHARGE_LIMIT_SOC = "teslamate/cars/$car_id/charge_limit_soc"
 # MQTT Status topics
 TOPIC_STATUS =      "topic_base/status"
 TOPIC_CHARGE_RATE = "topic_base/new_charge_rate"
