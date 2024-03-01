@@ -184,6 +184,7 @@ class MqttCallbacks:
         self.topic_teslamate_geofence = config["TOPIC_TESLAMATE_GEOFENCE"]
         self.topic_teslamate_plugged_in = config["TOPIC_TESLAMATE_PLUGGED_IN"]
         self.topic_teslamate_battery_level = config["TOPIC_TESLAMATE_BATTERY_LEVEL"]
+        self.topic_teslamate_state = config["TOPIC_TESLAMATE_STATE"]
         self.max_charge_limit = config["MAX_CHARGE_LIMIT"]
         if config["PREVENT_NON_SOLAR_CHARGE"] == "True":
             self.var_topic_prevent_non_solar_charge = True
@@ -192,6 +193,7 @@ class MqttCallbacks:
         self.var_topic_teslamate_geofence = False
         self.var_topic_teslamate_plugged_in = False
         self.var_topic_teslamate_battery_level = 0
+        self.var_topic_teslamate_state = False
 
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=self.client_id, protocol=mqtt.MQTTv311,
                                   clean_session=True)
@@ -200,6 +202,7 @@ class MqttCallbacks:
         self.client.message_callback_add(self.topic_teslamate_geofence, self.on_message_geofence)
         self.client.message_callback_add(self.topic_teslamate_plugged_in, self.on_message_plugged_in)
         self.client.message_callback_add(self.topic_teslamate_battery_level, self.on_message_battery_level)
+        self.client.message_callback_add(self.topic_teslamate_state, self.on_message_state)
         self.client.connect(host=self.broker, port=self.port, keepalive=60)
         self.client.loop_start()
 
@@ -215,6 +218,8 @@ class MqttCallbacks:
         logging.debug(f"Subscribed to: {self.topic_teslamate_plugged_in}")
         self.client.subscribe(topic=self.topic_teslamate_battery_level, qos=1)
         logging.debug(f"Subscribed to: {self.topic_teslamate_battery_level}")
+        self.client.subscribe(topic=self.topic_teslamate_state, qos=1)
+        logging.debug(f"Subscribed to: {self.topic_teslamate_state}")
 
     def on_message_prevent_non_solar_charge(self, client, userdata, msg):
         logging.debug(msg.payload.decode('utf-8'))
@@ -240,6 +245,10 @@ class MqttCallbacks:
     def on_message_battery_level(self, client, userdata, msg):
         logging.debug(msg.payload.decode('utf-8'))
         self.var_topic_teslamate_battery_level = int(msg.payload.decode("utf-8"))
+
+    def on_message_state(self, client, userdata, msg):
+        logging.debug(msg.payload.decode('utf-8'))
+        self.var_topic_teslamate_state = msg.payload.decode("utf-8")
 
     def calculate_charge_tesla(self):
         # Charge if: Car is at Home, Car is plugged in, and battery < max_charge_limit
