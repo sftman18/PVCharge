@@ -144,7 +144,10 @@ while True:
 
     else:    # We aren't allowed to charge
         if car_is_charging:
-            logging.info(f"Car not allowed to charge, stopping charge")
+            if Messages.var_topic_teslamate_battery_level == config["MAX_CHARGE_LIMIT"]:
+                logging.info(f"Completed charge to: {config['MAX_CHARGE_LIMIT']}% limit, stopping charge")
+            else:
+                logging.info(f"Car not allowed to charge, stopping charge")
             Car.set_charge_rate(config["MIN_CHARGE"])    # Set charge rate to min charge, to reset for next time
             if Car.stop_charging():    # Command will fail if charging has already stopped
                 logging.info(f"Charge Stopping, stopped successfully")
