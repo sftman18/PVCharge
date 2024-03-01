@@ -45,7 +45,7 @@ while True:
     if not charge_tesla:
         for poll in range(0, config["SLOW_POLLING"]), config["SLOW_POLLING_CHK"]:   # While waiting ensure that the car isn't charging
             if prevent_non_solar_charge:
-                logging.info("Slow poll wait, ensure car isn't charging")
+                logging.debug("Slow poll wait, ensure car isn't charging")
                 Energy.sample_sensor()
                 if round(Energy.charge_rate_sensor) >= config["MIN_CHARGE"]:
                     if Car.stop_charging():     # Stop if it is charging
