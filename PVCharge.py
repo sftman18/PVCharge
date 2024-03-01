@@ -73,7 +73,7 @@ while True:
                 # Use math.floor() on calculate_charge_rate to ensure we are always just "under" the available PV generation capacity
                 # Use round() on charge_rate_sensor to prevent constant requests when on the edge of a value
                 new_charge_rate = math.floor(Energy.calculate_charge_rate(new_sample=False))
-                logging.info(f"Car charging, new rate calculated: {new_charge_rate}, current rate: {round(Energy.charge_rate_sensor)}")
+                logging.debug(f"Car charging, new rate calculated: {new_charge_rate}, current rate: {round(Energy.charge_rate_sensor)}")
                 if new_charge_rate != round(Energy.charge_rate_sensor):
                     # Set new charge rate
                     if Car.set_charge_rate(new_charge_rate):
