@@ -185,7 +185,10 @@ class MqttCallbacks:
         self.topic_teslamate_plugged_in = config["TOPIC_TESLAMATE_PLUGGED_IN"]
         self.topic_teslamate_battery_level = config["TOPIC_TESLAMATE_BATTERY_LEVEL"]
         self.max_charge_limit = config["MAX_CHARGE_LIMIT"]
-        self.var_topic_prevent_non_solar_charge = False
+        if config["PREVENT_NON_SOLAR_CHARGE"] == "True":
+            self.var_topic_prevent_non_solar_charge = True
+        else:
+            self.var_topic_prevent_non_solar_charge = False
         self.var_topic_teslamate_geofence = False
         self.var_topic_teslamate_plugged_in = False
         self.var_topic_teslamate_battery_level = 0
