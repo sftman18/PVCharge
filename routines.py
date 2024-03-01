@@ -2,13 +2,14 @@ import os
 import sys
 import subprocess
 import math
+import time
 import logging
-from time import sleep
 import tomllib
 from dotenv import load_dotenv
 from egauge import webapi
-import paho.mqtt.client as mqtt
 from egauge.webapi.device import Register, Local
+import paho.mqtt.client as mqtt
+
 
 # Load parameters from .env
 load_dotenv()
@@ -83,7 +84,7 @@ class PowerUsage:
             if round(self.charge_rate_sensor) >= new_charge_rate:
                 logging.debug(f"New charge rate verified")
                 return True
-            sleep(0.5)
+            time.sleep(0.5)
         logging.debug(f"New charge rate NOT verified")
         return False
 
@@ -160,6 +161,17 @@ def call_sub_error_handler(cmd):
         return False
     return True
 
+def check_elapsed_time(loop_time, compare_time, wait_time):
+    if compare_time == 0:
+        compare_time = time.time()    # Set counter to current time
+        return False, compare_time
+    elif (loop_time - compare_time) >= wait_time:
+        # Compare current loop time to first time
+    	return True, compare_time
+    else:
+        # We haven't waited long enough, keep waiting
+    	return False, compare_time
+
 
 class MqttCallbacks:
     """Class to handle MQTT"""
@@ -173,7 +185,10 @@ class MqttCallbacks:
         self.topic_teslamate_plugged_in = config["TOPIC_TESLAMATE_PLUGGED_IN"]
         self.topic_teslamate_battery_level = config["TOPIC_TESLAMATE_BATTERY_LEVEL"]
         self.max_charge_limit = config["MAX_CHARGE_LIMIT"]
-        self.var_topic_prevent_non_solar_charge = False
+        if config["PREVENT_NON_SOLAR_CHARGE"] == "True":
+            self.var_topic_prevent_non_solar_charge = True
+        else:
+            self.var_topic_prevent_non_solar_charge = False
         self.var_topic_teslamate_geofence = False
         self.var_topic_teslamate_plugged_in = False
         self.var_topic_teslamate_battery_level = 0
