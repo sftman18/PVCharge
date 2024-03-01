@@ -54,7 +54,7 @@ while True:
                     else:
                         logging.warning("Slow poll, Car discovered charging and was NOT stopped successfully")
             else:
-                logging.info("Slow poll wait, ignore charging")
+                logging.debug("Slow poll wait, ignore charging")
             # Wait configured time before reporting status
             report_is_due, report_time = routines.check_elapsed_time(loop_time, report_time, config["REPORT_DELAY"])
             if report_is_due:
