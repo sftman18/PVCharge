@@ -111,7 +111,8 @@ while True:
                     # Wait configured time before starting
                     waited_long_enough, start_charging_time = routines.check_elapsed_time(loop_time, start_charging_time, config["DELAYED_START_TIME"])
                     if waited_long_enough:
-                        if Messages.var_topic_teslamate_state == "asleep":    # Only wake car if it's asleep
+                        wake_states = ["asleep", "suspended"]
+                        if Messages.var_topic_teslamate_state in wake_states:    # Only wake car if it's asleep
                             if Car.wake():
                                 logging.info(f"Car is NOT charging, Energy is Available, car woken successfully")
                                 time.sleep(5)    # Wait until car is awake
