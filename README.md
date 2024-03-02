@@ -6,17 +6,17 @@ An adaptive charging controller for your Tesla, enabling you to direct excess so
 - <a href="https://www.tesla.com/">Tesla vehicle</a>
 - Configured <a href="https://github.com/teslamotors/vehicle-command">Tesla Vehicle Command SDK</a> environment with <a href="https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control">tesla-control</a> available
 - <a href="https://github.com/teslamate-org/teslamate">TeslaMate</a>
-- <a href="https://www.egauge.net">eGauge solar monitoring</a>, with a CT on the charger circuit
+- <a href="https://www.egauge.net">eGauge solar monitoring</a> with a CT on the charger circuit
 - Linux computer with Bluetooth, such as a <a href="https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/">Raspberry Pi Zero 2 W</a>
 
 ## Optional
-- <a href="https://www.home-assistant.io/">Home Assistant</a> or another <a href="https://apps.apple.com/us/app/mqttool/id1085976398">MQTT client</a> to adjust the MQTT option for after-dark charging<br><br>
+- <a href="https://www.home-assistant.io/">Home Assistant</a> or another <a href="https://apps.apple.com/us/app/mqttool/id1085976398">MQTT client</a> to adjust the option for after-dark charging<br><br>
 
 ## Tesla Vehicle Command SDK
 
 PVCharge uses <a href="https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control">tesla-control</a> in the <a href="https://github.com/teslamotors/vehicle-command">Tesla Vehicle Command SDK</a> to communicate with your car over local Bluetooth
 
-- Note: To support Waking over BLE, please apply this <a href="https://github.com/teslamotors/vehicle-command/pull/106">PR:106</a>
+- Note: To support Waking over Bluetooth, please apply this <a href="https://github.com/teslamotors/vehicle-command/pull/106">PR:106</a>
 
 Here are a few hints to help complete the tesla-control installation
 
@@ -54,9 +54,9 @@ sudo systemctl start PVCharge.service</pre>
 PVCharge waits for 3 conditions to be communicated over MQTT from <a href="https://docs.teslamate.org/docs/integrations/mqtt">Teslamate</a>
 - Car location is "Home" <code>teslamate/cars/$car_id/geofence</code>
 - Car is plugged in <code>teslamate/cars/$car_id/plugged_in</code>
-- Car battery level below 80% <code>teslamate/cars/$car_id/battery_level</code> (Configurable in config.toml)<br>
-#### When those conditions are satisfied, it will attempt to start charging
-#### As available PV output changes throughout the day, charging rate will be adjusted
+- Car battery level is below the App limit <code>teslamate/cars/$car_id/battery_level</code><br>
+#### When those conditions are satisfied, it will attempt to start charging, when solar energy is available
+#### As PV output changes throughout the day, charging rate will be adjusted to use the excess energy
 
 ## Status
 PVCharge publishes status on MQTT
