@@ -16,7 +16,6 @@ TOPIC_CHARGE_RATE = "topic_base/new_charge_rate"
 
 # Control loop parameters
 MIN_CHARGE = 7           # Slowest allowed charge rate (Amps)
-MAX_CHARGE_LIMIT = 80    # Max charge limit (%)
 SLOW_POLLING = 30        # Charging disabled, control topic check interval (seconds)
 SLOW_POLLING_CHK = 5     # Charging disabled, prevent non-solar charge check interval (seconds)
 FAST_POLLING = 1         # Charging enabled, loop delay (seconds)
