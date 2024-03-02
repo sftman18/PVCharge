@@ -111,21 +111,29 @@ while True:
                     # Wait configured time before starting
                     waited_long_enough, start_charging_time = routines.check_elapsed_time(loop_time, start_charging_time, config["DELAYED_START_TIME"])
                     if waited_long_enough:
-                        if Car.wake():
-                            logging.info(f"Car is NOT charging, Energy is Available, car woken successfully")
-                            time.sleep(5)    # Wait until car is awake
-                            if Car.start_charging():
-                                logging.info(f"Car Started Charging Successfully")
-                                time.sleep(10)    # Wait until charging is fully started
-                                if Energy.verify_new_charge_rate(config["MIN_CHARGE"]):
-                                    logging.info(f"Charge Rate is greater than min charge")
-                                    car_is_charging = True
-                                    start_charging_time = 0
-                                    # Optionally we could set a new charge rate here
+                        wake_states = ["asleep", "suspended"]
+                        if Messages.var_topic_teslamate_state in wake_states:    # Only wake car if it's asleep
+                            if Car.wake():
+                                logging.info(f"Car is NOT charging, Energy is Available, car woken successfully")
+                                time.sleep(5)    # Wait until car is awake
                             else:
-                                logging.warning(f"Car Charging NOT Started Successfully")
+                                logging.warning(f"Car was NOT woken successfully")
+                        if Car.start_charging():
+                            logging.info(f"Car Started Charging Successfully")
+                            time.sleep(10)    # Wait until charging is fully started
+                            if Energy.verify_new_charge_rate(config["MIN_CHARGE"]):
+                                logging.info(f"Charge Rate is greater than min charge")
+                                car_is_charging = True
+                                start_charging_time = 0
+                                # Optionally we could set a new charge rate here
                         else:
-                            logging.warning(f"Car was NOT woken successfully")
+                            logging.warning(f"Car Charging NOT Started Successfully")
+                            # Detect one cause of not being able to start successfully
+                            if (Messages.var_topic_teslamate_charge_limit_soc != 0) and (config["MAX_CHARGE_LIMIT"] > Messages.var_topic_teslamate_charge_limit_soc):
+                                message = f"Bad Configuration Detected!\nMax Charge Limit of: {config['MAX_CHARGE_LIMIT']} > Charge Limit of Tesla App: {Messages.var_topic_teslamate_charge_limit_soc}\nPausing 30 seconds"
+                                logging.warning(message)
+                                Messages.client.publish(topic=config["TOPIC_STATUS"], payload=message, qos=1)
+                                time.sleep(30)
                     else:
                         logging.info(f"Car is NOT charging, Energy is Available, starting in: {round(config['DELAYED_START_TIME'] - (loop_time - start_charging_time))} seconds")
 
