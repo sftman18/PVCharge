@@ -10,7 +10,6 @@ from egauge import webapi
 from egauge.webapi.device import Register, Local
 import paho.mqtt.client as mqtt
 
-
 # Load parameters from .env
 load_dotenv()
 # Load config file
@@ -82,10 +81,10 @@ class PowerUsage:
             self.sample_sensor()
             # Use round() on the verify step (vs math.floor()) to prevent constant requests for the same value
             if round(self.charge_rate_sensor) >= new_charge_rate:
-                logging.debug(f"New charge rate verified")
+                logging.debug("New charge rate verified")
                 return True
             time.sleep(0.5)
-        logging.debug(f"New charge rate NOT verified")
+        logging.debug("New charge rate NOT verified")
         return False
 
     def sufficient_generation(self, min_charge):
@@ -186,7 +185,6 @@ class MqttCallbacks:
         self.topic_teslamate_battery_level = config["TOPIC_TESLAMATE_BATTERY_LEVEL"]
         self.topic_teslamate_charge_limit_soc = config["TOPIC_TESLAMATE_CHARGE_LIMIT_SOC"]
         self.topic_teslamate_state = config["TOPIC_TESLAMATE_STATE"]
-        self.max_charge_limit = config["MAX_CHARGE_LIMIT"]
         if config["PREVENT_NON_SOLAR_CHARGE"] == "True":
             self.var_topic_prevent_non_solar_charge = True
         else:
@@ -260,9 +258,9 @@ class MqttCallbacks:
         self.var_topic_teslamate_state = msg.payload.decode("utf-8")
 
     def calculate_charge_tesla(self):
-        # Charge if: Car is at Home, Car is plugged in, and battery < max_charge_limit
+        # Charge if: Car is at Home, Car is plugged in, and battery < charge_limit_soc
         if (self.var_topic_teslamate_geofence & self.var_topic_teslamate_plugged_in &
-                (self.var_topic_teslamate_battery_level < self.max_charge_limit)):
+                (self.var_topic_teslamate_battery_level < self.var_topic_teslamate_charge_limit_soc)):
             return True
         else:
             return False
