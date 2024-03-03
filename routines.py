@@ -50,7 +50,10 @@ class PowerUsage:
 
     def sample_register(self):
         """Sample registers and convert kW to W"""
-        self.register_sample = Register(self.my_eGauge, {"rate": "True", "time": "now"})
+        try:
+            self.register_sample = Register(self.my_eGauge, {"rate": "True", "time": "now"})
+        except Exception as err:
+            logging.warning(f"Sample_Register {type(err).__name__} - {err}")
         self.generation_reg = self.register_sample.pq_rate(self.eGauge_gen).value * 1000
         logging.debug(f"   Generation reg: {self.generation_reg}")
         self.usage_reg = self.register_sample.pq_rate(self.eGauge_use).value * 1000
@@ -59,7 +62,10 @@ class PowerUsage:
         logging.debug(f"Tesla charger reg: {self.tesla_charger_reg}")
 
     def sample_sensor(self):
-        self.sensor_sample = Local(self.my_eGauge, "l=L1:L2&s=all")
+        try:
+            self.sensor_sample = Local(self.my_eGauge, "l=L1:L2&s=all")
+        except Exception as err:
+            logging.warning(f"Sample_Register {type(err).__name__} - {err}")
         self.charger_voltage_sensor = (self.sensor_sample.rate("L1", "n") +
                                        self.sensor_sample.rate("L2", "n"))
         logging.debug(f"Charger voltage sensor: {self.charger_voltage_sensor}")
