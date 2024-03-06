@@ -125,7 +125,7 @@ class TeslaCommands:
         # Load parameters from .env
         self.tesla_control_bin = os.getenv("TESLA_CONTROL_BIN")
         self.tesla_key_file = os.getenv("TESLA_KEY_FILE")
-        self.tesla_base_command = [self.tesla_control_bin, '-ble', '-key-file', self.tesla_key_file]
+        self.tesla_base_command = [self.tesla_control_bin, '-debug', '-ble', '-key-file', self.tesla_key_file]
         # Test for existence of tesla-control
         if not os.path.exists(self.tesla_control_bin):
             logging.critical(f"tesla-control not found at: {self.tesla_control_bin}")
