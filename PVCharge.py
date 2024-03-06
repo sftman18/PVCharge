@@ -108,28 +108,31 @@ while True:
         else:    # Car isn't charging, should it be?
             if Energy.sufficient_generation(config["MIN_CHARGE"]):    # If we have enough sun to charge
                 if round(Energy.charge_rate_sensor) < config["MIN_CHARGE"]:	   # Make sure car isn’t already charging
-                    # Wait configured time before starting
-                    waited_long_enough, start_charging_time = routines.check_elapsed_time(loop_time, start_charging_time, config["DELAYED_START_TIME"])
-                    if waited_long_enough:
-                        wake_states = ["asleep", "suspended"]
-                        if Messages.var_topic_teslamate_state in wake_states:    # Only wake car if it's asleep
-                            if Car.wake():
-                                logging.info("Car is NOT charging, Energy is Available, car woken successfully")
-                                time.sleep(5)    # Wait until car is awake
+                    if ((Messages.var_topic_teslamate_charge_limit_soc - Messages.var_topic_teslamate_battery_level) > 1):    # If we are charging at least 1%
+                        # Wait configured time before starting
+                        waited_long_enough, start_charging_time = routines.check_elapsed_time(loop_time, start_charging_time, config["DELAYED_START_TIME"])
+                        if waited_long_enough:
+                            wake_states = ["asleep", "suspended"]
+                            if Messages.var_topic_teslamate_state in wake_states:    # Only wake car if it's asleep
+                                if Car.wake():
+                                    logging.info("Car is NOT charging, Energy is Available, car woken successfully")
+                                    time.sleep(5)    # Wait until car is awake
+                                else:
+                                    logging.warning("Car was NOT woken successfully")
+                            if Car.start_charging():
+                                logging.info("Car Started Charging Successfully")
+                                time.sleep(10)    # Wait until charging is fully started
+                                if Energy.verify_new_charge_rate(config["MIN_CHARGE"]):
+                                    logging.info("Charge Rate is greater than min charge")
+                                    car_is_charging = True
+                                    start_charging_time = 0
+                                    # Optionally we could set a new charge rate here
                             else:
-                                logging.warning("Car was NOT woken successfully")
-                        if Car.start_charging():
-                            logging.info("Car Started Charging Successfully")
-                            time.sleep(10)    # Wait until charging is fully started
-                            if Energy.verify_new_charge_rate(config["MIN_CHARGE"]):
-                                logging.info("Charge Rate is greater than min charge")
-                                car_is_charging = True
-                                start_charging_time = 0
-                                # Optionally we could set a new charge rate here
+                                logging.warning("Car Charging NOT Started Successfully")
                         else:
-                            logging.warning("Car Charging NOT Started Successfully")
+                            logging.info(f"Car is NOT charging, Energy is Available, starting in: {round(config['DELAYED_START_TIME'] - (loop_time - start_charging_time))} seconds")
                     else:
-                        logging.info(f"Car is NOT charging, Energy is Available, starting in: {round(config['DELAYED_START_TIME'] - (loop_time - start_charging_time))} seconds")
+                        logging.debug("Attempting to charge with only 1% remaining")
 
                 else:    # Car is already charging, set the flag
                     car_is_charging = True
