@@ -10,7 +10,7 @@ An adaptive charging controller for your Tesla, enabling you to direct excess so
 - Linux computer with Bluetooth, such as a <a href="https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/">Raspberry Pi Zero 2 W</a>
 
 ## Optional
-- <a href="https://www.home-assistant.io/">Home Assistant</a> or another <a href="https://apps.apple.com/us/app/mqttool/id1085976398">MQTT client</a> to adjust the option for after-dark charging<br><br>
+- <a href="https://www.home-assistant.io/">Home Assistant</a> or another <a href="https://apps.apple.com/us/app/mqttool/id1085976398">MQTT client</a> to adjust the options for after-dark charging, and delayed charging<br><br>
 
 ## Tesla Vehicle Command SDK
 
@@ -64,10 +64,17 @@ PVCharge publishes status on MQTT
 - Current charge rate <code>topic_base/new_charge_rate</code>
 
 ## Control
-The behavior of after-hours charging is controlled by MQTT: <code>topic_base/prevent_non_solar_charging</code><br>
+- The behavior of after-hours charging is controlled by MQTT: <code>topic_base/prevent_non_solar_charging</code><br>
 <dl>
-<dt>True</dt> <dd>PVCharge will prevent charging when insufficient PV output is available</dd>
-<dt>False</dt> <dd>PVCharge will ignore charging when insufficient PV output is available (default, Configurable in config.toml)</dd>
+  <dt>True</dt> <dd>PVCharge will prevent charging when insufficient PV output is available</dd>
+  <dt>False</dt> <dd>PVCharge will ignore charging when insufficient PV output is available (default, Configurable in config.toml)</dd>
+</dl><br>
+
+- The ability to delay charging is controlled by: <code>topic_base/charge_delay</code><br>
+<dl>
+  <dt>"delay"</dt> <dd>charging is delayed for 1 hour</dd>
+  <dt>"##" (number)</dt> <dd>charging is delayed by the indicated number of minutes</dd>
+  <dt>other text (i.e. "cancel")</dt> <dd>resume normal charging</dd>
 </dl>
 
 ## Troubleshooting
