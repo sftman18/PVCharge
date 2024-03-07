@@ -38,6 +38,7 @@ while True:
     loop_time = time.time()
     # Check if we are allowed to charge
     charge_tesla = Messages.calculate_charge_tesla()
+    charge_delay = Messages.calculate_charge_delay(loop_time)
     logging.debug(f"Current calculated charge enable: {charge_tesla}")
     prevent_non_solar_charge = Messages.var_topic_prevent_non_solar_charge
     logging.debug(f"Current prevent non_solar charge: {prevent_non_solar_charge}")
@@ -58,13 +59,13 @@ while True:
             # Wait configured time before reporting status
             report_is_due, report_time = routines.check_elapsed_time(loop_time, report_time, config["REPORT_DELAY"])
             if report_is_due:
-                status = Energy.status_report(charge_tesla, car_is_charging, new_sample=True)
+                status = Energy.status_report(charge_tesla, charge_delay, car_is_charging, new_sample=True)
                 logging.info(f"{status}")
                 Messages.client.publish(topic=config["TOPIC_STATUS"], payload=status, qos=1)
                 report_time = 0
             time.sleep(config["SLOW_POLLING_CHK"])
 
-    if charge_tesla:    # If we are allowed to charge
+    if (charge_tesla == True and charge_delay == False):    # If we are allowed to charge
         if car_is_charging:    # Is the car currently charging?
             if Energy.sufficient_generation(config["MIN_CHARGE"]):
                 # Reset stop time
@@ -163,7 +164,7 @@ while True:
     # Wait configured time before reporting status
     report_is_due, report_time = routines.check_elapsed_time(loop_time, report_time, config["REPORT_DELAY"])
     if report_is_due:
-        status = Energy.status_report(charge_tesla, car_is_charging, new_sample=True)
+        status = Energy.status_report(charge_tesla, charge_delay, car_is_charging, new_sample=True)
         logging.info(f"{status}")
         Messages.client.publish(topic=config["TOPIC_STATUS"], payload=status, qos=1)
         report_time = 0
