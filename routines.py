@@ -289,9 +289,8 @@ class MqttCallbacks:
     def calculate_charge_delay(self, loop_time):
         if (self.var_topic_charge_delay != 0 and self.var_charge_delay_time != 0):
             if (loop_time - self.var_charge_delay_time) >= self.var_topic_charge_delay:
-                # Reset variables, delay has elapsed
-                self.var_topic_charge_delay = 0
-                self.var_charge_delay_time = 0
+                # Clear retained message (if any) and reset variables (with null payload), delay has elapsed
+                self.client.publish(topic=self.topic_charge_delay, payload='', qos=1, retain=True)
                 logging.debug("Charge delay completed")
                 return False
             else:
