@@ -148,6 +148,10 @@ while True:
                         else:
                             logging.warning("Fast poll, Car discovered charging and was NOT stopped successfully")
 
+                if start_charging_time != 0:    # If starting time has already been set
+                    # Reset start charging time as sun has dropped below the threshold
+                    start_charging_time = 0
+
     else:    # We aren't allowed to charge
         if car_is_charging:
             if Messages.var_topic_teslamate_battery_level == Messages.var_topic_teslamate_charge_limit_soc:
