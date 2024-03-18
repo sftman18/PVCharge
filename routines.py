@@ -49,7 +49,7 @@ class PowerUsage:
             sys.exit(1)
         logging.info(f"Connected to eGauge {self.meter_dev} (user {self.meter_user}, rights={rights})")
 
-    @timeoutable()
+    @timeoutable('Timeout')
     def sample_register(self):
         """Sample registers and convert kW to W"""
         self.register_sample = Register(self.my_eGauge, {"rate": "True", "time": "now"})
@@ -60,7 +60,7 @@ class PowerUsage:
         self.tesla_charger_reg = self.register_sample.pq_rate(self.eGauge_charger).value * 1000
         logging.debug(f"Tesla charger reg: {self.tesla_charger_reg}")
 
-    @timeoutable()
+    @timeoutable('Timeout')
     def sample_sensor(self):
         self.sensor_sample = Local(self.my_eGauge, "l=L1:L2&s=all")
         self.charger_voltage_sensor = (self.sensor_sample.rate("L1", "n") +
@@ -71,10 +71,10 @@ class PowerUsage:
 
     def calculate_charge_rate(self, new_sample):
         if new_sample:
-            if self.sample_register(timeout=5) == None:
+            if self.sample_register(timeout=5) == 'Timeout':
                 logging.warning("eGauge Register read timed out")
                 return self.new_charge_rate
-            if self.sample_sensor(timeout=5) == None:
+            if self.sample_sensor(timeout=5) == 'Timeout':
                 logging.warning("eGauge Sensor read timed out")
                 return self.new_charge_rate
         # Calculate the charge rate
@@ -85,7 +85,7 @@ class PowerUsage:
 
     def verify_new_charge_rate(self, new_charge_rate):
         for attempts in range(0, 5):
-            if self.sample_sensor(timeout=5) == None:
+            if self.sample_sensor(timeout=5) == 'Timeout':
                 logging.warning("eGauge Sensor read timed out")
             # Use round() on the verify step (vs math.floor()) to prevent constant requests for the same value
             if round(self.charge_rate_sensor) >= new_charge_rate:
@@ -137,26 +137,26 @@ class TeslaCommands:
             logging.critical("https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control")
             sys.exit(1)
 
-    @timeoutable()
+    @timeoutable('Timeout')
     def set_charge_rate(self, charge_rate):
         command = self.tesla_base_command + ['charging-set-amps']
         command.append(str(charge_rate))
         logging.debug(command)
         return call_sub_error_handler(command)
 
-    @timeoutable()
+    @timeoutable('Timeout')
     def start_charging(self):
         command = self.tesla_base_command + ['charging-start']
         logging.debug(command)
         return call_sub_error_handler(command)
 
-    @timeoutable()
+    @timeoutable('Timeout')
     def stop_charging(self):
         command = self.tesla_base_command + ['charging-stop']
         logging.debug(command)
         return call_sub_error_handler(command)
 
-    @timeoutable()
+    @timeoutable('Timeout')
     def wake(self):
         command = self.tesla_base_command + ['-domain', 'vcsec', 'wake']
         logging.debug(command)

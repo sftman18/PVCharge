@@ -47,7 +47,7 @@ while True:
         for poll in range(0, config["SLOW_POLLING"]), config["SLOW_POLLING_CHK"]:   # While waiting ensure that the car isn't charging
             if prevent_non_solar_charge:
                 logging.debug("Slow poll wait, ensure car isn't charging")
-                if Energy.sample_sensor(timeout=5) == None:
+                if Energy.sample_sensor(timeout=5) == 'Timeout':
                     logging.warning("eGauge Sensor read timed out")
                 if round(Energy.charge_rate_sensor) >= config["MIN_CHARGE"]:
                     if Car.stop_charging(timeout=5):     # Stop if it is charging
@@ -78,7 +78,7 @@ while True:
                 logging.debug(f"Car charging, new rate calculated: {new_charge_rate}, current rate: {round(Energy.charge_rate_sensor)}")
                 if new_charge_rate != round(Energy.charge_rate_sensor):
                     # Set new charge rate
-                    if Car.set_charge_rate(timeout=5, charge_rate=new_charge_rate):
+                    if Car.set_charge_rate(new_charge_rate, timeout=5):
                         if Energy.verify_new_charge_rate(new_charge_rate):
                             logging.info(f"Car charging, new rate: {new_charge_rate} successfully set")
                             Messages.client.publish(topic=config["TOPIC_CHARGE_RATE"], payload=new_charge_rate, qos=1)
@@ -88,7 +88,7 @@ while True:
             else:    # We don't have enough sun
                 if round(Energy.charge_rate_sensor) > config["MIN_CHARGE"]:    # If we are charging at anything greater than min charge
                     # Set charge rate to min charge
-                    if Car.set_charge_rate(timeout=5, charge_rate=config["MIN_CHARGE"]):
+                    if Car.set_charge_rate(config["MIN_CHARGE"], timeout=5):
                         logging.info(f"Car charging, Available Energy Reduced, new rate: {config['MIN_CHARGE']} successfully set")
                         Messages.client.publish(topic=config["TOPIC_CHARGE_RATE"], payload=config["MIN_CHARGE"], qos=1)
                     else:
@@ -142,7 +142,7 @@ while True:
 
             else:    # Sun isn't generating enough power to charge
                 if prevent_non_solar_charge:    # If true, prevent after-hours charging
-                    if Energy.sample_sensor(timeout=5) == None:
+                    if Energy.sample_sensor(timeout=5) == 'Timeout':
                         logging.warning("eGauge Sensor read timed out")
                     if round(Energy.charge_rate_sensor) >= config["MIN_CHARGE"]:
                         if Car.stop_charging(timeout=5):  # Stop if it is charging
@@ -160,7 +160,7 @@ while True:
                 logging.info(f"Completed charge to: {Messages.var_topic_teslamate_charge_limit_soc}% limit, stopping charge")
             else:
                 logging.info("Car not allowed to charge, stopping charge")
-            Car.set_charge_rate(timeout=5, charge_rate=config["MIN_CHARGE"])    # Set charge rate to min charge, to reset for next time
+            Car.set_charge_rate(config["MIN_CHARGE"], timeout=5)    # Set charge rate to min charge, to reset for next time
             if Car.stop_charging(timeout=5):    # Command will fail if charging has already stopped
                 logging.info("Charge Stopping, stopped successfully")
             else:
