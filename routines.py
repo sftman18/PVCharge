@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from egauge import webapi
 from egauge.webapi.device import Register, Local
 import paho.mqtt.client as mqtt
+from stopit import threading_timeoutable as timeoutable
 
 # Load parameters from .env
 load_dotenv()
@@ -48,12 +49,10 @@ class PowerUsage:
             sys.exit(1)
         logging.info(f"Connected to eGauge {self.meter_dev} (user {self.meter_user}, rights={rights})")
 
+    @timeoutable()
     def sample_register(self):
         """Sample registers and convert kW to W"""
-        try:
-            self.register_sample = Register(self.my_eGauge, {"rate": "True", "time": "now"})
-        except Exception as err:
-            logging.warning(f"Sample_Register {type(err).__name__} - {err}")
+        self.register_sample = Register(self.my_eGauge, {"rate": "True", "time": "now"})
         self.generation_reg = self.register_sample.pq_rate(self.eGauge_gen).value * 1000
         logging.debug(f"   Generation reg: {self.generation_reg}")
         self.usage_reg = self.register_sample.pq_rate(self.eGauge_use).value * 1000
@@ -61,11 +60,9 @@ class PowerUsage:
         self.tesla_charger_reg = self.register_sample.pq_rate(self.eGauge_charger).value * 1000
         logging.debug(f"Tesla charger reg: {self.tesla_charger_reg}")
 
+    @timeoutable()
     def sample_sensor(self):
-        try:
-            self.sensor_sample = Local(self.my_eGauge, "l=L1:L2&s=all")
-        except Exception as err:
-            logging.warning(f"Sample_Register {type(err).__name__} - {err}")
+        self.sensor_sample = Local(self.my_eGauge, "l=L1:L2&s=all")
         self.charger_voltage_sensor = (self.sensor_sample.rate("L1", "n") +
                                        self.sensor_sample.rate("L2", "n"))
         logging.debug(f"Charger voltage sensor: {self.charger_voltage_sensor}")
@@ -74,8 +71,12 @@ class PowerUsage:
 
     def calculate_charge_rate(self, new_sample):
         if new_sample:
-            self.sample_register()
-            self.sample_sensor()
+            if self.sample_register(timeout=5) == None:
+                logging.warning("eGauge Register read timed out")
+                return self.new_charge_rate
+            if self.sample_sensor(timeout=5) == None:
+                logging.warning("eGauge Sensor read timed out")
+                return self.new_charge_rate
         # Calculate the charge rate
         self.new_charge_rate = ((self.generation_reg - (self.usage_reg - self.tesla_charger_reg)) /
                                 self.charger_voltage_sensor)
@@ -84,7 +85,8 @@ class PowerUsage:
 
     def verify_new_charge_rate(self, new_charge_rate):
         for attempts in range(0, 5):
-            self.sample_sensor()
+            if self.sample_sensor(timeout=5) == None:
+                logging.warning("eGauge Sensor read timed out")
             # Use round() on the verify step (vs math.floor()) to prevent constant requests for the same value
             if round(self.charge_rate_sensor) >= new_charge_rate:
                 logging.debug("New charge rate verified")
@@ -135,22 +137,26 @@ class TeslaCommands:
             logging.critical("https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control")
             sys.exit(1)
 
+    @timeoutable()
     def set_charge_rate(self, charge_rate):
         command = self.tesla_base_command + ['charging-set-amps']
         command.append(str(charge_rate))
         logging.debug(command)
         return call_sub_error_handler(command)
 
+    @timeoutable()
     def start_charging(self):
         command = self.tesla_base_command + ['charging-start']
         logging.debug(command)
         return call_sub_error_handler(command)
 
+    @timeoutable()
     def stop_charging(self):
         command = self.tesla_base_command + ['charging-stop']
         logging.debug(command)
         return call_sub_error_handler(command)
 
+    @timeoutable()
     def wake(self):
         command = self.tesla_base_command + ['-domain', 'vcsec', 'wake']
         logging.debug(command)
