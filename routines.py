@@ -88,7 +88,7 @@ class PowerUsage:
             if self.sample_sensor(timeout=5) == 'Timeout':
                 logging.warning("eGauge Sensor read timed out")
             # Use round() on the verify step (vs math.floor()) to prevent constant requests for the same value
-            if round(self.charge_rate_sensor) >= new_charge_rate:
+            if round(self.charge_rate_sensor) == new_charge_rate:
                 logging.debug("New charge rate verified")
                 return True
             time.sleep(0.5)
