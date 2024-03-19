@@ -156,7 +156,6 @@ class TeslaCommands:
         logging.debug(command)
         return call_sub_error_handler(command)
 
-    @timeoutable('Timeout')
     def wake(self):
         command = self.tesla_base_command + ['-domain', 'vcsec', 'wake']
         logging.debug(command)
