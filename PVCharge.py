@@ -116,12 +116,12 @@ while True:
                         if waited_long_enough:
                             wake_states = ["asleep", "suspended"]
                             if Messages.var_topic_teslamate_state in wake_states:    # Only wake car if it's asleep
-                                if Car.wake(timeout=5):
+                                if Car.wake(timeout=10):
                                     logging.info("Car is NOT charging, Energy is Available, car woken successfully")
                                     time.sleep(5)    # Wait until car is awake
                                 else:
                                     logging.warning("Car was NOT woken successfully")
-                            if Car.start_charging(timeout=5):
+                            if Car.start_charging(timeout=10):
                                 logging.info("Car Started Charging Successfully")
                                 time.sleep(10)    # Wait until charging is fully started
                                 if Energy.verify_new_charge_rate(config["MIN_CHARGE"]):
