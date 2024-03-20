@@ -47,7 +47,7 @@ while True:
         for poll in range(0, config["SLOW_POLLING"]), config["SLOW_POLLING_CHK"]:   # While waiting ensure that the car isn't charging
             if prevent_non_solar_charge:
                 logging.debug("Slow poll wait, ensure car isn't charging")
-                if Energy.sample_sensor(timeout=10) == 'Timeout':
+                if Energy.sample_sensor(timeout=5) == 'Timeout':
                     logging.warning("eGauge Sensor read timed out")
                 if round(Energy.charge_rate_sensor) >= config["MIN_CHARGE"]:
                     if Car.stop_charging(timeout=10):     # Stop if it is charging
@@ -142,7 +142,7 @@ while True:
 
             else:    # Sun isn't generating enough power to charge
                 if prevent_non_solar_charge:    # If true, prevent after-hours charging
-                    if Energy.sample_sensor(timeout=10) == 'Timeout':
+                    if Energy.sample_sensor(timeout=5) == 'Timeout':
                         logging.warning("eGauge Sensor read timed out")
                     if round(Energy.charge_rate_sensor) >= config["MIN_CHARGE"]:
                         if Car.stop_charging(timeout=10):  # Stop if it is charging

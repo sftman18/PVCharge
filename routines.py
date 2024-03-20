@@ -84,7 +84,7 @@ class PowerUsage:
         return self.new_charge_rate
 
     def verify_new_charge_rate(self, new_charge_rate):
-        for attempts in range(0, 5):
+        for attempts in range(0, 6):
             if self.sample_sensor(timeout=5) == 'Timeout':
                 logging.warning("eGauge Sensor read timed out")
             # Use round() on the verify step (vs math.floor()) to prevent constant requests for the same value
