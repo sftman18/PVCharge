@@ -95,6 +95,12 @@ class PowerUsage:
         else:
             return False
 
+    def check_sun_up(self):
+        if self.generation_reg > config["MIN_SOLAR"]:
+            return True
+        else:
+            return False
+
     def status_report(self, charge_tesla, charge_delay, car_is_charging, new_sample):
         if new_sample:
             self.calculate_charge_rate(new_sample)
@@ -200,6 +206,8 @@ class MqttCallbacks:
         self.var_topic_teslamate_charge_limit_soc = 0
         self.var_topic_teslamate_state = False
 
+        self.car_cmd = TeslaCommands()
+
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=self.client_id, protocol=mqtt.MQTTv311,
                                   clean_session=True)
         self.client.on_connect = self.on_connect
@@ -262,6 +270,9 @@ class MqttCallbacks:
     def on_message_plugged_in(self, client, userdata, msg):
         logging.debug(msg.payload.decode('utf-8'))
         if msg.payload.decode("utf-8") == "true":
+            if (not self.var_topic_teslamate_plugged_in) and self.var_topic_prevent_non_solar_charge:
+                # If previous state was False, and prevent_non_solar_charge is True, stop charging immediately
+                self.car_cmd.stop_charging()
             self.var_topic_teslamate_plugged_in = True
         else:
             self.var_topic_teslamate_plugged_in = False

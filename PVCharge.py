@@ -32,40 +32,20 @@ Messages = routines.MqttCallbacks()
 car_is_charging = False
 stop_charging_time = 0
 start_charging_time = 0
-report_time = 0
+report_time = time.time() - config["REPORT_DELAY"]
 while True:
     # Record loop start time
     loop_time = time.time()
     # Check if we are allowed to charge
     charge_tesla = Messages.calculate_charge_tesla()
+    sun_up = Energy.check_sun_up()
     charge_delay = Messages.calculate_charge_delay(loop_time)
     logging.debug(f"Current calculated charge enable: {charge_tesla}")
+    logging.debug(f"                      Is Sun Up?: {sun_up}")
     prevent_non_solar_charge = Messages.var_topic_prevent_non_solar_charge
     logging.debug(f"Current prevent non_solar charge: {prevent_non_solar_charge}")
 
-    if not charge_tesla:
-        for poll in range(0, config["SLOW_POLLING"]), config["SLOW_POLLING_CHK"]:   # While waiting ensure that the car isn't charging
-            if prevent_non_solar_charge:
-                logging.debug("Slow poll wait, ensure car isn't charging")
-                Energy.sample_sensor()
-                if round(Energy.charge_rate_sensor) >= config["MIN_CHARGE"]:
-                    if Car.stop_charging():     # Stop if it is charging
-                        logging.info("Slow poll, Car discovered charging and was stopped successfully")
-                        car_is_charging = False
-                    else:
-                        logging.warning("Slow poll, Car discovered charging and was NOT stopped successfully")
-            else:
-                logging.debug("Slow poll wait, ignore charging")
-            # Wait configured time before reporting status
-            report_is_due, report_time = routines.check_elapsed_time(loop_time, report_time, config["REPORT_DELAY"])
-            if report_is_due:
-                status = Energy.status_report(charge_tesla, charge_delay, car_is_charging, new_sample=True)
-                logging.info(f"{status}")
-                Messages.client.publish(topic=config["TOPIC_STATUS"], payload=status, qos=1)
-                report_time = 0
-            time.sleep(config["SLOW_POLLING_CHK"])
-
-    if (charge_tesla == True and charge_delay == False):    # If we are allowed to charge
+    if ((charge_tesla and sun_up) and not charge_delay):    # If we are allowed to charge
         if car_is_charging:    # Is the car currently charging?
             if Energy.sufficient_generation(config["MIN_CHARGE"]):
                 # Reset stop time
@@ -153,7 +133,8 @@ while True:
                     start_charging_time = 0
 
     else:    # We aren't allowed to charge
-        if car_is_charging:
+        if car_is_charging and (charge_delay or prevent_non_solar_charge):
+            #stop charging
             if Messages.var_topic_teslamate_battery_level == Messages.var_topic_teslamate_charge_limit_soc:
                 logging.info(f"Completed charge to: {Messages.var_topic_teslamate_charge_limit_soc}% limit, stopping charge")
             else:
@@ -165,13 +146,18 @@ while True:
                 logging.info("Charge Stopping, did NOT stop successfully")
             car_is_charging = False    # Clear the flag even if it fails
 
+        else:
+            # We are either: manually delayed, car isn't ready to charge, or sun is down; just wait
+            logging.debug("Slow poll wait")
+            time.sleep(config["SLOW_POLLING"])
+
     # Wait configured time before reporting status
     report_is_due, report_time = routines.check_elapsed_time(loop_time, report_time, config["REPORT_DELAY"])
     if report_is_due:
         status = Energy.status_report(charge_tesla, charge_delay, car_is_charging, new_sample=True)
         logging.info(f"{status}")
         Messages.client.publish(topic=config["TOPIC_STATUS"], payload=status, qos=1)
-        report_time = 0
+        report_time = loop_time    # Reset counter for next loop
 
     # Control loop delay
     time.sleep(config["FAST_POLLING"])
