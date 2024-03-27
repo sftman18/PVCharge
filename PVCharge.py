@@ -142,8 +142,6 @@ while True:
 
             else:    # Sun isn't generating enough power to charge
                 if prevent_non_solar_charge:    # If true, prevent after-hours charging
-                    if Energy.sample_sensor(timeout=5) == 'Timeout':
-                        logging.warning("eGauge Sensor read timed out")
                     if round(Energy.charge_rate_sensor) >= config["MIN_CHARGE"]:
                         if Car.stop_charging(timeout=10):  # Stop if it is charging
                             logging.info("Fast poll, Car discovered charging and was stopped successfully")

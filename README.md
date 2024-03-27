@@ -16,8 +16,6 @@ An adaptive charging controller for your Tesla, enabling you to direct excess so
 
 PVCharge uses <a href="https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control">tesla-control</a> in the <a href="https://github.com/teslamotors/vehicle-command">Tesla Vehicle Command SDK</a> to communicate with your car over local Bluetooth
 
-- Note: To support Waking over Bluetooth, please apply this <a href="https://github.com/teslamotors/vehicle-command/pull/106">PR:106</a>
-
 Here are a few hints to help complete the tesla-control installation
 
 <pre>Create the directory "keyrings" to hold your private key:
