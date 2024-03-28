@@ -145,7 +145,7 @@ while True:
                     logging.info("Slow poll, Car discovered charging and was stopped successfully")
                 else:
                     logging.warning("Slow poll, Car discovered charging and was NOT stopped successfully")
-                    Energy.sample_sensor()    # Force sensor refresh to increase accuracy of subsequent loop
+                Energy.sample_sensor()    # Force sensor refresh to increase accuracy of subsequent loop
             else:
                 # Prevent non_solar_charge or delay, wait condition
                 time.sleep(config["SLOW_POLLING"])
