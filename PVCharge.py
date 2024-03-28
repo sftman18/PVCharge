@@ -145,7 +145,7 @@ while True:
                     logging.info("Slow poll, Car discovered charging and was stopped successfully")
                 else:
                     logging.warning("Slow poll, Car discovered charging and was NOT stopped successfully")
-                    Energy.sample_sensor()    # Force sensor refresh to ensure accurate subsequent loop
+                    Energy.sample_sensor()    # Force sensor refresh to increase accuracy of subsequent loop
             else:
                 # Prevent non_solar_charge or delay, wait condition
                 time.sleep(config["SLOW_POLLING"])
@@ -157,7 +157,7 @@ while True:
     # Wait configured time before reporting status
     report_is_due, report_time = routines.check_elapsed_time(loop_time, report_time, config["REPORT_DELAY"])
     if report_is_due:
-        status = Energy.status_report(charge_tesla, charge_delay, car_is_charging, new_sample=True)
+        status = Energy.status_report(charge_tesla, charge_delay, sun_up, car_is_charging, new_sample=True)
         logging.info(f"{status}")
         Messages.client.publish(topic=config["TOPIC_STATUS"], payload=status, qos=1)
         report_time = loop_time    # Reset counter for next loop

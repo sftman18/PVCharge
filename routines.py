@@ -101,14 +101,14 @@ class PowerUsage:
         else:
             return False
 
-    def status_report(self, charge_tesla, charge_delay, car_is_charging, new_sample):
+    def status_report(self, charge_tesla, charge_delay, sun_up, car_is_charging, new_sample):
         if new_sample:
             self.calculate_charge_rate(new_sample)
         # Build status string
         status = "Status: "
-        if charge_tesla == True and charge_delay == False:
+        if ((charge_tesla and sun_up) and not charge_delay):
             status += "En:1 "
-        elif charge_tesla == True and charge_delay == True:
+        elif charge_delay == True:
             status += "Delay "
         else:
             status += "En:0 "
