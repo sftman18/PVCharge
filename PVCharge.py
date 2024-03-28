@@ -147,6 +147,16 @@ while True:
             car_is_charging = False    # Clear the flag even if it fails
 
         else:
+            if prevent_non_solar_charge:    # Check for car unexpectedly charging
+                logging.debug("Slow poll wait, ensure car isn't charging")
+                Energy.sample_sensor()
+                if round(Energy.charge_rate_sensor) >= config["MIN_CHARGE"]:
+                    if Car.stop_charging():     # Stop if it is charging
+                        logging.info("Slow poll, Car discovered charging and was stopped successfully")
+                        car_is_charging = False
+                    else:
+                        logging.warning("Slow poll, Car discovered charging and was NOT stopped successfully")
+
             # We are either: manually delayed, car isn't ready to charge, or sun is down; just wait
             logging.debug("Slow poll wait")
             time.sleep(config["SLOW_POLLING"])

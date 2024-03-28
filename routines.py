@@ -272,7 +272,11 @@ class MqttCallbacks:
         if msg.payload.decode("utf-8") == "true":
             if (not self.var_topic_teslamate_plugged_in) and self.var_topic_prevent_non_solar_charge:
                 # If previous state was False, and prevent_non_solar_charge is True, stop charging immediately
-                self.car_cmd.stop_charging()
+                time.sleep(4)    # Delay to ensure success of the stop command
+                if self.car_cmd.stop_charging():
+                    logging.info("Charging stopped upon plugin, prevent_non_solar_charge active")
+                else:
+                    logging.warning("Charging NOT stopped upon plugin, prevent_non_solar_charge active")
             self.var_topic_teslamate_plugged_in = True
         else:
             self.var_topic_teslamate_plugged_in = False
