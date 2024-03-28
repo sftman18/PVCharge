@@ -52,19 +52,19 @@ class PowerUsage:
         """Sample registers and convert kW to W"""
         self.register_sample = Register(self.my_eGauge, {"rate": "True", "time": "now"})
         self.generation_reg = self.register_sample.pq_rate(self.eGauge_gen).value * 1000
-        logging.debug(f"   Generation reg: {self.generation_reg}")
+        logging.debug(f"   Generation reg: {self.generation_reg:.0f}")
         self.usage_reg = self.register_sample.pq_rate(self.eGauge_use).value * 1000
-        logging.debug(f"        Usage reg: {self.usage_reg}")
+        logging.debug(f"        Usage reg: {self.usage_reg:.0f}")
         self.tesla_charger_reg = self.register_sample.pq_rate(self.eGauge_charger).value * 1000
-        logging.debug(f"Tesla charger reg: {self.tesla_charger_reg}")
+        logging.debug(f"Tesla charger reg: {self.tesla_charger_reg:.0f}")
 
     def sample_sensor(self):
         self.sensor_sample = Local(self.my_eGauge, "l=L1:L2&s=all")
         self.charger_voltage_sensor = (self.sensor_sample.rate("L1", "n") +
                                        self.sensor_sample.rate("L2", "n"))
-        logging.debug(f"Charger voltage sensor: {self.charger_voltage_sensor}")
+        logging.debug(f" Charger voltage sensor: {self.charger_voltage_sensor:.2f}")
         self.charge_rate_sensor = self.sensor_sample.rate(self.eGauge_charger_sensor, "n")
-        logging.debug(f"    Charge rate sensor: {self.charge_rate_sensor}")
+        logging.debug(f"     Charge rate sensor: {self.charge_rate_sensor:.2f}")
 
     def calculate_charge_rate(self, new_sample):
         if new_sample:
@@ -73,7 +73,7 @@ class PowerUsage:
         # Calculate the charge rate
         self.new_charge_rate = ((self.generation_reg - (self.usage_reg - self.tesla_charger_reg)) /
                                 self.charger_voltage_sensor)
-        logging.debug(f"New charge rate: {self.new_charge_rate}")
+        logging.debug(f"New charge rate: {self.new_charge_rate:.2f}")
         return self.new_charge_rate
 
     def verify_new_charge_rate(self, new_charge_rate):
