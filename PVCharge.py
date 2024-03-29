@@ -143,6 +143,7 @@ while True:
             if round(Energy.charge_rate_sensor) >= config["MIN_CHARGE"]:
                 if Car.stop_charging():     # Stop if it is charging
                     logging.info("Slow poll, Car discovered charging and was stopped successfully")
+                    time.sleep(2)    # Delay to allow stop command to complete
                 else:
                     logging.warning("Slow poll, Car discovered charging and was NOT stopped successfully")
                 Energy.sample_sensor()    # Force sensor refresh to increase accuracy of subsequent loop
