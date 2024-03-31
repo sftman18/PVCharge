@@ -52,19 +52,19 @@ class PowerUsage:
         """Sample registers and convert kW to W"""
         self.register_sample = Register(self.my_eGauge, {"rate": "True", "time": "now"})
         self.generation_reg = self.register_sample.pq_rate(self.eGauge_gen).value * 1000
-        logging.debug(f"   Generation reg: {self.generation_reg}")
+        logging.debug(f"   Generation reg: {self.generation_reg:.0f}")
         self.usage_reg = self.register_sample.pq_rate(self.eGauge_use).value * 1000
-        logging.debug(f"        Usage reg: {self.usage_reg}")
+        logging.debug(f"        Usage reg: {self.usage_reg:.0f}")
         self.tesla_charger_reg = self.register_sample.pq_rate(self.eGauge_charger).value * 1000
-        logging.debug(f"Tesla charger reg: {self.tesla_charger_reg}")
+        logging.debug(f"Tesla charger reg: {self.tesla_charger_reg:.0f}")
 
     def sample_sensor(self):
         self.sensor_sample = Local(self.my_eGauge, "l=L1:L2&s=all")
         self.charger_voltage_sensor = (self.sensor_sample.rate("L1", "n") +
                                        self.sensor_sample.rate("L2", "n"))
-        logging.debug(f"Charger voltage sensor: {self.charger_voltage_sensor}")
+        logging.debug(f" Charger voltage sensor: {self.charger_voltage_sensor:.2f}")
         self.charge_rate_sensor = self.sensor_sample.rate(self.eGauge_charger_sensor, "n")
-        logging.debug(f"    Charge rate sensor: {self.charge_rate_sensor}")
+        logging.debug(f"     Charge rate sensor: {self.charge_rate_sensor:.2f}")
 
     def calculate_charge_rate(self, new_sample):
         if new_sample:
@@ -73,7 +73,7 @@ class PowerUsage:
         # Calculate the charge rate
         self.new_charge_rate = ((self.generation_reg - (self.usage_reg - self.tesla_charger_reg)) /
                                 self.charger_voltage_sensor)
-        logging.debug(f"New charge rate: {self.new_charge_rate}")
+        logging.debug(f"New charge rate: {self.new_charge_rate:.2f}")
         return self.new_charge_rate
 
     def verify_new_charge_rate(self, new_charge_rate):
@@ -95,14 +95,20 @@ class PowerUsage:
         else:
             return False
 
-    def status_report(self, charge_tesla, charge_delay, car_is_charging, new_sample):
+    def check_sun_up(self):
+        if self.generation_reg > config["MIN_SOLAR"]:
+            return True
+        else:
+            return False
+
+    def status_report(self, charge_tesla, charge_delay, sun_up, car_is_charging, new_sample):
         if new_sample:
             self.calculate_charge_rate(new_sample)
         # Build status string
         status = "Status: "
-        if charge_tesla == True and charge_delay == False:
+        if ((charge_tesla and sun_up) and not charge_delay):
             status += "En:1 "
-        elif charge_tesla == True and charge_delay == True:
+        elif charge_delay == True:
             status += "Delay "
         else:
             status += "En:0 "
@@ -200,6 +206,8 @@ class MqttCallbacks:
         self.var_topic_teslamate_charge_limit_soc = 0
         self.var_topic_teslamate_state = False
 
+        self.car_cmd = TeslaCommands()
+
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=self.client_id, protocol=mqtt.MQTTv311,
                                   clean_session=True)
         self.client.on_connect = self.on_connect
@@ -262,6 +270,13 @@ class MqttCallbacks:
     def on_message_plugged_in(self, client, userdata, msg):
         logging.debug(msg.payload.decode('utf-8'))
         if msg.payload.decode("utf-8") == "true":
+            if (not self.var_topic_teslamate_plugged_in) and self.var_topic_prevent_non_solar_charge:
+                # If previous state was False, and prevent_non_solar_charge is True, stop charging immediately
+                time.sleep(4)    # Delay to ensure success of the stop command
+                if self.car_cmd.stop_charging():
+                    logging.info("Charging stopped upon plugin, prevent_non_solar_charge active")
+                else:
+                    logging.warning("Charging NOT stopped upon plugin, prevent_non_solar_charge active")
             self.var_topic_teslamate_plugged_in = True
         else:
             self.var_topic_teslamate_plugged_in = False
