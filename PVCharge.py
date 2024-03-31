@@ -121,7 +121,6 @@ while True:
 
             else:    # Sun isn't generating enough power to charge
                 if prevent_non_solar_charge:    # If true, prevent after-hours charging
-                    Energy.sample_sensor()
                     if round(Energy.charge_rate_sensor) >= config["MIN_CHARGE"]:
                         if Car.stop_charging():  # Stop if it is charging
                             logging.info("Fast poll, Car discovered charging and was stopped successfully")
