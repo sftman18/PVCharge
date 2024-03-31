@@ -201,7 +201,7 @@ class MqttCallbacks:
         self.var_topic_charge_delay = 0
         self.var_charge_delay_time = 0
         self.var_topic_teslamate_geofence = False
-        self.var_topic_teslamate_plugged_in = False
+        self.var_topic_teslamate_plugged_in = True
         self.var_topic_teslamate_battery_level = 0
         self.var_topic_teslamate_charge_limit_soc = 0
         self.var_topic_teslamate_state = False
