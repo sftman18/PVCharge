@@ -143,20 +143,17 @@ class TeslaCommands:
             logging.critical("https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control")
             sys.exit(1)
 
-    @timeoutable('Timeout')
     def set_charge_rate(self, charge_rate):
         command = self.tesla_base_command + ['charging-set-amps']
         command.append(str(charge_rate))
         logging.debug(command)
         return call_sub_error_handler(command)
 
-    @timeoutable('Timeout')
     def start_charging(self):
         command = self.tesla_base_command + ['charging-start']
         logging.debug(command)
         return call_sub_error_handler(command)
 
-    @timeoutable('Timeout')
     def stop_charging(self):
         command = self.tesla_base_command + ['charging-stop']
         logging.debug(command)
@@ -168,6 +165,7 @@ class TeslaCommands:
         return call_sub_error_handler(command)
 
 
+@timeoutable('Timeout')
 def call_sub_error_handler(cmd):
     try:
         result = subprocess.run(args=cmd, capture_output=True, text=True, check=True)
