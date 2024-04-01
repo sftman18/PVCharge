@@ -147,22 +147,22 @@ class TeslaCommands:
         command = self.tesla_base_command + ['charging-set-amps']
         command.append(str(charge_rate))
         logging.debug(command)
-        return call_sub_error_handler(command)
+        return call_sub_error_handler(command, timeout=10)
 
     def start_charging(self):
         command = self.tesla_base_command + ['charging-start']
         logging.debug(command)
-        return call_sub_error_handler(command)
+        return call_sub_error_handler(command, timeout=10)
 
     def stop_charging(self):
         command = self.tesla_base_command + ['charging-stop']
         logging.debug(command)
-        return call_sub_error_handler(command)
+        return call_sub_error_handler(command, timeout=10)
 
     def wake(self):
         command = self.tesla_base_command + ['-domain', 'vcsec', 'wake']
         logging.debug(command)
-        return call_sub_error_handler(command)
+        return call_sub_error_handler(command, timeout=20)
 
 
 @timeoutable('Timeout')
