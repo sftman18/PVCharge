@@ -57,7 +57,9 @@ while True:
                 logging.debug(f"Car charging, new rate calculated: {new_charge_rate}, current rate: {round(Energy.charge_rate_sensor)}")
                 if new_charge_rate != round(Energy.charge_rate_sensor):
                     # Set new charge rate
-                    if Car.set_charge_rate(new_charge_rate):
+                    return_val = Car.set_charge_rate(new_charge_rate)
+                    logging.debug(f"DEBUG, set_charge_rate Return: {return_val}")
+                    if return_val == True:
                         if Energy.verify_new_charge_rate(new_charge_rate):
                             logging.info(f"Car charging, new rate: {new_charge_rate} successfully set")
                             Messages.client.publish(topic=config["TOPIC_CHARGE_RATE"], payload=new_charge_rate, qos=1)
@@ -67,7 +69,9 @@ while True:
             else:    # We don't have enough sun
                 if round(Energy.charge_rate_sensor) > config["MIN_CHARGE"]:    # If we are charging at anything greater than min charge
                     # Set charge rate to min charge
-                    if Car.set_charge_rate(config["MIN_CHARGE"]):
+                    return_val = Car.set_charge_rate(config["MIN_CHARGE"])
+                    logging.debug(f"DEBUG, set_charge_rate Return:{return_val}")
+                    if return_val == True:
                         logging.info(f"Car charging, Available Energy Reduced, new rate: {config['MIN_CHARGE']} successfully set")
                         Messages.client.publish(topic=config["TOPIC_CHARGE_RATE"], payload=config["MIN_CHARGE"], qos=1)
                     else:
@@ -77,7 +81,9 @@ while True:
                     # Wait configured time before stopping
                     waited_long_enough, stop_charging_time = routines.check_elapsed_time(loop_time, stop_charging_time, config["DELAYED_STOP_TIME"])
                     if waited_long_enough:
-                        if Car.stop_charging():
+                        return_val = Car.stop_charging()
+                        logging.debug(f"DEBUG, stop_charging Return:{return_val}")
+                        if return_val == True:
                             logging.info("Car charging, Available Energy Reduced, charging was successfully stopped")
                             car_is_charging = False
                             stop_charging_time = 0
@@ -100,7 +106,9 @@ while True:
                                     time.sleep(5)    # Wait until car is awake
                                 else:
                                     logging.warning("Car was NOT woken successfully")
-                            if Car.start_charging():
+                            return_val = Car.start_charging()
+                            logging.debug(f"DEBUG, start_charging Return: {return_val}")
+                            if return_val == True:
                                 logging.info("Car Started Charging Successfully")
                                 time.sleep(10)    # Wait until charging is fully started
                                 if Energy.verify_new_charge_rate(config["MIN_CHARGE"]):

@@ -84,14 +84,14 @@ class PowerUsage:
         return self.new_charge_rate
 
     def verify_new_charge_rate(self, new_charge_rate):
-        for attempts in range(0, 6):
+        for attempts in range(0, 5):
             if self.sample_sensor(timeout=5) == 'Timeout':
                 logging.warning("eGauge Sensor read timed out")
             # Use round() on the verify step (vs math.floor()) to prevent constant requests for the same value
             if round(self.charge_rate_sensor) == new_charge_rate:
                 logging.debug("New charge rate verified")
                 return True
-            time.sleep(0.5)
+            time.sleep(1)
         logging.debug("New charge rate NOT verified")
         return False
 
@@ -147,12 +147,12 @@ class TeslaCommands:
         command = self.tesla_base_command + ['charging-set-amps']
         command.append(str(charge_rate))
         logging.debug(command)
-        return call_sub_error_handler(command, timeout=10)
+        return call_sub_error_handler(command, timeout=15)
 
     def start_charging(self):
         command = self.tesla_base_command + ['charging-start']
         logging.debug(command)
-        return call_sub_error_handler(command, timeout=10)
+        return call_sub_error_handler(command, timeout=20)
 
     def stop_charging(self):
         command = self.tesla_base_command + ['charging-stop']
