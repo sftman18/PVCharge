@@ -55,7 +55,13 @@ while True:
                 # Use round() on charge_rate_sensor to prevent constant requests when on the edge of a value
                 new_charge_rate = math.floor(Energy.calculate_charge_rate(new_sample=False))
                 logging.debug(f"Car charging, new rate calculated: {new_charge_rate}, current rate: {round(Energy.charge_rate_sensor)}")
-                if new_charge_rate != round(Energy.charge_rate_sensor):
+                if (new_charge_rate != round(Energy.charge_rate_sensor)) and (round(Energy.charge_rate_sensor) != 0):
+                    # Make sure rate change isn't too large
+                    rate_change = new_charge_rate - round(Energy.charge_rate_sensor)
+                    if rate_change > 8:
+                        # Make smaller rate change
+                        new_charge_rate = round(Energy.charge_rate_sensor) + round(rate_change / 2)
+                        logging.debug(f"Setting lower rate to ensure success: {new_charge_rate}")
                     # Set new charge rate
                     return_val = Car.set_charge_rate(new_charge_rate)
                     logging.debug(f"DEBUG, set_charge_rate Return: {return_val}")
