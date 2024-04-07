@@ -84,14 +84,14 @@ class PowerUsage:
         return self.new_charge_rate
 
     def verify_new_charge_rate(self, new_charge_rate):
-        for attempts in range(0, 5):
+        for attempts in range(0, 6):
             if self.sample_sensor(timeout=5) == 'Timeout':
                 logging.warning("eGauge Sensor read timed out")
             # Use round() on the verify step (vs math.floor()) to prevent constant requests for the same value
             if round(self.charge_rate_sensor) == new_charge_rate:
                 logging.debug("New charge rate verified")
                 return True
-            time.sleep(1)
+            time.sleep(0.5)
         logging.debug("New charge rate NOT verified")
         return False
 
@@ -135,7 +135,7 @@ class TeslaCommands:
         # Load parameters from .env
         self.tesla_control_bin = os.getenv("TESLA_CONTROL_BIN")
         self.tesla_key_file = os.getenv("TESLA_KEY_FILE")
-        self.tesla_base_command = [self.tesla_control_bin, '-debug', '-ble', '-key-file', self.tesla_key_file]
+        self.tesla_base_command = [self.tesla_control_bin, '-ble', '-key-file', self.tesla_key_file]
         # Test for existence of tesla-control
         if not os.path.exists(self.tesla_control_bin):
             logging.critical(f"tesla-control not found at: {self.tesla_control_bin}")
@@ -282,7 +282,7 @@ class MqttCallbacks:
             if (not self.var_topic_teslamate_plugged_in) and self.var_topic_prevent_non_solar_charge:
                 # If previous state was False, and prevent_non_solar_charge is True, stop charging immediately
                 time.sleep(4)    # Delay to ensure success of the stop command
-                if self.car_cmd.stop_charging():
+                if self.car_cmd.stop_charging() == True:
                     logging.info("Charging stopped upon plugin, prevent_non_solar_charge active")
                 else:
                     logging.warning("Charging NOT stopped upon plugin, prevent_non_solar_charge active")
