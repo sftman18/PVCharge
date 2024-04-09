@@ -113,7 +113,7 @@ while True:
                         else:
                             logging.info(f"Car is NOT charging, Energy is Available, starting in: {round(config['DELAYED_START_TIME'] - (loop_time - start_charging_time))} seconds")
                     else:
-                        logging.debug("Attempting to charge with only 1% remaining")
+                        logging.info("Car will not charge with only 1% remaining, skipping")
 
                 else:    # Car is already charging, set the flag
                     car_is_charging = True
