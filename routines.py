@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from egauge import webapi
 from egauge.webapi.device import Register, Local
 import paho.mqtt.client as mqtt
+from stopit import threading_timeoutable as timeoutable
 
 # Load parameters from .env
 load_dotenv()
@@ -48,6 +49,7 @@ class PowerUsage:
             sys.exit(1)
         logging.info(f"Connected to eGauge {self.meter_dev} (user {self.meter_user}, rights={rights})")
 
+    @timeoutable('Timeout')
     def sample_register(self):
         """Sample registers and convert kW to W"""
         self.register_sample = Register(self.my_eGauge, {"rate": "True", "time": "now"})
@@ -58,6 +60,7 @@ class PowerUsage:
         self.tesla_charger_reg = self.register_sample.pq_rate(self.eGauge_charger).value * 1000
         logging.debug(f"Tesla charger reg: {self.tesla_charger_reg:.0f}")
 
+    @timeoutable('Timeout')
     def sample_sensor(self):
         self.sensor_sample = Local(self.my_eGauge, "l=L1:L2&s=all")
         self.charger_voltage_sensor = (self.sensor_sample.rate("L1", "n") +
@@ -68,8 +71,12 @@ class PowerUsage:
 
     def calculate_charge_rate(self, new_sample):
         if new_sample:
-            self.sample_register()
-            self.sample_sensor()
+            if self.sample_register(timeout=5) == 'Timeout':
+                logging.warning("eGauge Register read timed out")
+                return self.new_charge_rate
+            if self.sample_sensor(timeout=5) == 'Timeout':
+                logging.warning("eGauge Sensor read timed out")
+                return self.new_charge_rate
         # Calculate the charge rate
         self.new_charge_rate = ((self.generation_reg - (self.usage_reg - self.tesla_charger_reg)) /
                                 self.charger_voltage_sensor)
@@ -77,10 +84,11 @@ class PowerUsage:
         return self.new_charge_rate
 
     def verify_new_charge_rate(self, new_charge_rate):
-        for attempts in range(0, 5):
-            self.sample_sensor()
+        for attempts in range(0, 6):
+            if self.sample_sensor(timeout=5) == 'Timeout':
+                logging.warning("eGauge Sensor read timed out")
             # Use round() on the verify step (vs math.floor()) to prevent constant requests for the same value
-            if round(self.charge_rate_sensor) >= new_charge_rate:
+            if round(self.charge_rate_sensor) == new_charge_rate:
                 logging.debug("New charge rate verified")
                 return True
             time.sleep(0.5)
@@ -139,24 +147,25 @@ class TeslaCommands:
         command = self.tesla_base_command + ['charging-set-amps']
         command.append(str(charge_rate))
         logging.debug(command)
-        return call_sub_error_handler(command)
+        return call_sub_error_handler(command, timeout=15)
 
     def start_charging(self):
         command = self.tesla_base_command + ['charging-start']
         logging.debug(command)
-        return call_sub_error_handler(command)
+        return call_sub_error_handler(command, timeout=20)
 
     def stop_charging(self):
         command = self.tesla_base_command + ['charging-stop']
         logging.debug(command)
-        return call_sub_error_handler(command)
+        return call_sub_error_handler(command, timeout=10)
 
     def wake(self):
         command = self.tesla_base_command + ['-domain', 'vcsec', 'wake']
         logging.debug(command)
-        return call_sub_error_handler(command)
+        return call_sub_error_handler(command, timeout=20)
 
 
+@timeoutable('Timeout')
 def call_sub_error_handler(cmd):
     try:
         result = subprocess.run(args=cmd, capture_output=True, text=True, check=True)
@@ -273,7 +282,7 @@ class MqttCallbacks:
             if (not self.var_topic_teslamate_plugged_in) and self.var_topic_prevent_non_solar_charge:
                 # If previous state was False, and prevent_non_solar_charge is True, stop charging immediately
                 time.sleep(4)    # Delay to ensure success of the stop command
-                if self.car_cmd.stop_charging():
+                if self.car_cmd.stop_charging() == True:
                     logging.info("Charging stopped upon plugin, prevent_non_solar_charge active")
                 else:
                     logging.warning("Charging NOT stopped upon plugin, prevent_non_solar_charge active")
