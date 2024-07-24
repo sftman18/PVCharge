@@ -82,7 +82,12 @@ while True:
                             car_is_charging = False
                             stop_charging_time = 0
                         else:
-                            logging.warning("Car charging, Available Energy Reduced, charging was NOT successfully stopped")
+                            if round(Energy.charge_rate_sensor) < config["MIN_CHARGE"]:    # Catch case where stop charging is failing due to charging already being stopped
+                                logging.info("Car charging was already stopped, resetting flags")
+                                car_is_charging = False
+                                stop_charging_time = 0
+                            else:
+                                logging.warning("Car charging, Available Energy Reduced, charging was NOT successfully stopped")
                     else:
                         logging.info(f"Car charging, Available Energy Reduced, charging at min rate, stopping in: {round(config['DELAYED_STOP_TIME'] - (loop_time - stop_charging_time))} seconds")
 
@@ -93,7 +98,7 @@ while True:
                         # Wait configured time before starting
                         waited_long_enough, start_charging_time = routines.check_elapsed_time(loop_time, start_charging_time, config["DELAYED_START_TIME"])
                         if waited_long_enough:
-                            wake_states = ["asleep", "suspended"]
+                            wake_states = ["asleep", "suspended", "offline"]
                             if Messages.var_topic_teslamate_state in wake_states:    # Only wake car if it's asleep
                                 if Car.wake():
                                     logging.info("Car is NOT charging, Energy is Available, car woken successfully")
