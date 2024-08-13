@@ -178,8 +178,8 @@ def call_sub_error_handler(cmd):
         if result.stdout != "":
             logging.debug(result.stdout)
     except subprocess.CalledProcessError as error:
-        logging.warning(f"{type(error).__name__} - {error}")
-        logging.warning(f"Error: {error.stderr}")
+        logging.debug(f"{type(error).__name__} - {error}")
+        logging.debug(f"Error: {error.stderr}")
         delay = 0
         if "not_charging" in error.stderr:
             # We have a match for "car could not execute command: not_charging" (precooling error)
