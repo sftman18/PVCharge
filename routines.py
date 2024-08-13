@@ -147,26 +147,28 @@ class TeslaCommands:
         command = self.tesla_base_command + ['charging-set-amps']
         command.append(str(charge_rate))
         logging.debug(command)
-        result, command_returncode, command_stderr = call_sub_error_handler(command, timeout=25)
-        return error_handler(result, command_returncode, command_stderr)
+        result, delay = call_sub_error_handler(command, timeout=25)
+        return result
 
     def start_charging(self):
         command = self.tesla_base_command + ['charging-start']
         logging.debug(command)
-        result, command_returncode, command_stderr = call_sub_error_handler(command, timeout=25)
-        return error_handler(result, command_returncode, command_stderr)
+        result, delay = call_sub_error_handler(command, timeout=25)
+        return result
 
     def stop_charging(self):
         command = self.tesla_base_command + ['charging-stop']
         logging.debug(command)
-        result, command_returncode, command_stderr = call_sub_error_handler(command, timeout=25)
-        return error_handler(result, command_returncode, command_stderr)
+        result, delay = call_sub_error_handler(command, timeout=25)
+        if delay > 0:
+            time.sleep(delay)
+        return result
 
     def wake(self):
         command = self.tesla_base_command + ['-domain', 'vcsec', 'wake']
         logging.debug(command)
-        result, command_returncode, command_stderr = call_sub_error_handler(command, timeout=25)
-        return error_handler(result, command_returncode, command_stderr)
+        result, delay = call_sub_error_handler(command, timeout=25)
+        return result
 
 
 @timeoutable('Timeout')
@@ -178,24 +180,22 @@ def call_sub_error_handler(cmd):
     except subprocess.CalledProcessError as error:
         logging.warning(f"{type(error).__name__} - {error}")
         logging.warning(f"Error: {error.stderr}")
-        return False, error.returncode, error.stderr
-    return True, 0, ""
-
-def error_handler(result, rc, stderr):
-    if result == False and rc != 0:
-        if "not_charging" in stderr:
+        delay = 0
+        if "not_charging" in error.stderr:
             # We have a match for "car could not execute command: not_charging" (precooling error)
             logging.info("Attempted to stop charging while car was only precooling! delaying 30 seconds")
-            time.sleep(30)
-        elif "context deadline exceeded" in stderr:
+            delay = 30
+        elif "context deadline exceeded" in error.stderr:
             # We have a match for the timeout error
             logging.warning("Last Tesla command timed out")
-        elif "read/write on closed pipe" in stderr:
+        elif "read/write on closed pipe" in error.stderr:
             # Match for ATT request failed read/write on closed pipe
             logging.warning("Last Tesla command failed to connect over Bluetooth")
         else:
             logging.warning("Unknown error, note error output")
-    return result
+            logging.warning(f"Error: {error.stderr}")
+        return False, delay
+    return True, 0
 
 def check_elapsed_time(loop_time, compare_time, wait_time):
     if compare_time == 0:
