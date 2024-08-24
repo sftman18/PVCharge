@@ -150,7 +150,7 @@ while True:
                     time.sleep(2)    # Delay to allow stop command to complete
                 else:
                     logging.warning("Slow poll, Car discovered charging and was NOT stopped successfully")
-                Energy.sample_sensor(timeout=5)    # Force sensor refresh to increase accuracy of subsequent loop
+                Energy.sample_sensor(timeout=10)    # Force sensor refresh to increase accuracy of subsequent loop
             else:
                 # Prevent non_solar_charge or delay, wait condition
                 time.sleep(config["SLOW_POLLING"])

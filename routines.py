@@ -71,10 +71,10 @@ class PowerUsage:
 
     def calculate_charge_rate(self, new_sample):
         if new_sample:
-            if self.sample_register(timeout=5) == 'Timeout':
+            if self.sample_register(timeout=30) == 'Timeout':
                 logging.warning("eGauge Register read timed out")
                 return self.new_charge_rate
-            if self.sample_sensor(timeout=5) == 'Timeout':
+            if self.sample_sensor(timeout=30) == 'Timeout':
                 logging.warning("eGauge Sensor read timed out")
                 return self.new_charge_rate
         # Calculate the charge rate
@@ -85,7 +85,7 @@ class PowerUsage:
 
     def verify_new_charge_rate(self, new_charge_rate):
         for attempts in range(0, 6):
-            if self.sample_sensor(timeout=5) == 'Timeout':
+            if self.sample_sensor(timeout=10) == 'Timeout':
                 logging.warning("eGauge Sensor read timed out")
             # Use round() on the verify step (vs math.floor()) to prevent constant requests for the same value
             if round(self.charge_rate_sensor) == new_charge_rate:
@@ -147,22 +147,28 @@ class TeslaCommands:
         command = self.tesla_base_command + ['charging-set-amps']
         command.append(str(charge_rate))
         logging.debug(command)
-        return call_sub_error_handler(command, timeout=15)
+        result, delay = call_sub_error_handler(command, timeout=25)
+        return result
 
     def start_charging(self):
         command = self.tesla_base_command + ['charging-start']
         logging.debug(command)
-        return call_sub_error_handler(command, timeout=20)
+        result, delay = call_sub_error_handler(command, timeout=25)
+        return result
 
     def stop_charging(self):
         command = self.tesla_base_command + ['charging-stop']
         logging.debug(command)
-        return call_sub_error_handler(command, timeout=10)
+        result, delay = call_sub_error_handler(command, timeout=25)
+        if delay > 0:
+            time.sleep(delay)
+        return result
 
     def wake(self):
         command = self.tesla_base_command + ['-domain', 'vcsec', 'wake']
         logging.debug(command)
-        return call_sub_error_handler(command, timeout=20)
+        result, delay = call_sub_error_handler(command, timeout=25)
+        return result
 
 
 @timeoutable('Timeout')
@@ -172,10 +178,24 @@ def call_sub_error_handler(cmd):
         if result.stdout != "":
             logging.debug(result.stdout)
     except subprocess.CalledProcessError as error:
-        logging.warning(f"{type(error).__name__} - {error}")
-        logging.warning(f"Error: {error.stderr}")
-        return False
-    return True
+        logging.debug(f"{type(error).__name__} - {error}")
+        logging.debug(f"Error: {error.stderr}")
+        delay = 0
+        if "not_charging" in error.stderr:
+            # We have a match for "car could not execute command: not_charging" (precooling error)
+            logging.info("Attempted to stop charging when car was only Pre-Cooling!  Delaying: 60 seconds")
+            delay = 60
+        elif "context deadline exceeded" in error.stderr:
+            # We have a match for the timeout error
+            logging.warning("Last Tesla command timed out")
+        elif "read/write on closed pipe" in error.stderr:
+            # Match for ATT request failed read/write on closed pipe
+            logging.warning("Last Tesla command failed to connect over Bluetooth")
+        else:
+            logging.warning("Unknown error, note error output")
+            logging.warning(f"Error: {error.stderr}")
+        return False, delay
+    return True, 0
 
 def check_elapsed_time(loop_time, compare_time, wait_time):
     if compare_time == 0:
