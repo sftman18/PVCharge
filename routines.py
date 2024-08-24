@@ -185,6 +185,10 @@ def call_sub_error_handler(cmd):
             # We have a match for "car could not execute command: not_charging" (precooling error)
             logging.info("Attempted to stop charging when car was only Pre-Cooling!  Delaying: 60 seconds")
             delay = 60
+        elif "is_charging" in error.stderr:
+            # We have a match for "car could not execute command: is_charging" (already charging condition)
+            logging.info("Attempted to start charging when car was already charging!")
+            return True, 0    # Return True as this isn't really an error condition
         elif "context deadline exceeded" in error.stderr:
             # We have a match for the timeout error
             logging.warning("Last Tesla command timed out")
