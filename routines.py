@@ -5,6 +5,7 @@ import math
 import time
 import logging
 import tomllib
+import requests
 from dotenv import load_dotenv
 from egauge import webapi
 from egauge.webapi.device import Register, Local
@@ -127,6 +128,48 @@ class PowerUsage:
         status += ("Cur:" + str(round(self.charge_rate_sensor)) + " " + "New:" +
                    str(math.floor(self.new_charge_rate)))
         return status
+
+class TeslaProxy:
+    """Class to send commands to TeslaBleHttpProxy"""
+    def __init__(self):
+        # Load parameters from .env
+        self.tesla_vin = os.getenv("TESLA_VIN")
+        self.tesla_proxy_host = os.getenv("PROXY_HOST")
+        self.tesla_proxy_base_command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/command/"
+
+    def set_charge_rate(self, charge_rate):
+        command = self.tesla_proxy_base_command + "set_charging_amps"
+        data = {}
+        data["charging_amps"] = charge_rate
+        return call_http_post(command, data)
+
+    def start_charging(self):
+        command = self.tesla_proxy_base_command + "charge_start"
+        data = ""
+        return call_http_post(command, data)
+
+    def stop_charging(self):
+        command = self.tesla_proxy_base_command + "charge_stop"
+        data = ""
+        return call_http_post(command, data)
+
+    def wake(self):
+        command = self.tesla_proxy_base_command + "wake_up"
+        data = ""
+        return call_http_post(command, data)
+
+def call_http_post(cmd, data):
+    if data == "":
+        r = requests.post(url=cmd, data=data)
+    else:
+        r = requests.post(url=cmd, json=data)
+    if r.status_code == 200:    # good return code
+        result = r.json()
+        print(result)
+        logging.info(result)
+    else:
+        logging.warning(result)
+    return result["response"]["result"]
 
 
 class TeslaCommands:

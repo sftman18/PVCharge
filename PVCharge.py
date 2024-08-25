@@ -25,7 +25,8 @@ else:
 
 # Initialize classes
 Energy = routines.PowerUsage()
-Car = routines.TeslaCommands()
+#Car = routines.TeslaCommands()
+Car = routines.TeslaProxy()
 Messages = routines.MqttCallbacks()
 
 # Control loop variables
