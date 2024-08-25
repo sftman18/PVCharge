@@ -165,8 +165,7 @@ def call_http_post(cmd, data):
         r = requests.post(url=cmd, json=data)
     if r.status_code == 200:    # good return code
         result = r.json()
-        print(result)
-        logging.info(result)
+        logging.debug(result)
     else:
         logging.warning(result)
     return result["response"]["result"]
