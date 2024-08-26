@@ -59,7 +59,6 @@ while True:
                 if (new_charge_rate != round(Energy.charge_rate_sensor)) and (round(Energy.charge_rate_sensor) != 0):
                     # Set new charge rate
                     if Car.set_charge_rate(new_charge_rate) == True:
-                        time.sleep(5)
                         if Energy.verify_new_charge_rate(new_charge_rate):
                             logging.info(f"Car charging, new rate: {new_charge_rate} successfully set")
                             Messages.client.publish(topic=config["TOPIC_CHARGE_RATE"], payload=new_charge_rate, qos=1)
@@ -70,7 +69,6 @@ while True:
                 if round(Energy.charge_rate_sensor) > config["MIN_CHARGE"]:    # If we are charging at anything greater than min charge
                     # Set charge rate to min charge
                     if Car.set_charge_rate(config["MIN_CHARGE"]) == True:
-                        time.sleep(5)
                         logging.info(f"Car charging, Available Energy Reduced, new rate: {config['MIN_CHARGE']} successfully set")
                         Messages.client.publish(topic=config["TOPIC_CHARGE_RATE"], payload=config["MIN_CHARGE"], qos=1)
                     else:
@@ -81,7 +79,6 @@ while True:
                     waited_long_enough, stop_charging_time = routines.check_elapsed_time(loop_time, stop_charging_time, config["DELAYED_STOP_TIME"])
                     if waited_long_enough:
                         if Car.stop_charging() == True:
-                            time.sleep(5)
                             logging.info("Car charging, Available Energy Reduced, charging was successfully stopped")
                             car_is_charging = False
                             stop_charging_time = 0

@@ -141,7 +141,9 @@ class TeslaProxy:
         command = self.tesla_proxy_base_command + "set_charging_amps"
         data = {}
         data["charging_amps"] = charge_rate
-        return call_http_post(command, data)
+        rc = call_http_post(command, data)
+        time.sleep(5)
+        return rc
 
     def start_charging(self):
         command = self.tesla_proxy_base_command + "charge_start"
@@ -151,7 +153,9 @@ class TeslaProxy:
     def stop_charging(self):
         command = self.tesla_proxy_base_command + "charge_stop"
         data = ""
-        return call_http_post(command, data)
+        rc = call_http_post(command, data)
+        time.sleep(5)
+        return rc
 
     def wake(self):
         command = self.tesla_proxy_base_command + "wake_up"
