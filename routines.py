@@ -136,12 +136,12 @@ class TeslaProxy:
         # Load parameters from .env
         self.tesla_vin = os.getenv("TESLA_VIN")
         self.tesla_proxy_host = os.getenv("PROXY_HOST")
-        self.tesla_proxy_base_command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/command/"
         # Test for existence of TeslaBleHttpProxy
         if self.tesla_proxy_host == None:
             logging.critical("PROXY_HOST not configured")
             logging.critical("Please point to TeslaBleHttpProxy in .env")
             sys.exit(1)
+        self.tesla_proxy_base_command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/command/"
 
     def set_charge_rate(self, charge_rate):
         command = self.tesla_proxy_base_command + "set_charging_amps"
