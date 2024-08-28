@@ -25,7 +25,7 @@ else:
 
 # Initialize classes
 Energy = routines.PowerUsage()
-if config["ENABLE_TESLA_PROXY"] == True:
+if config["ENABLE_TESLA_PROXY"] == "True":
     Car = routines.TeslaProxy()
 else:
     Car = routines.TeslaCommands()

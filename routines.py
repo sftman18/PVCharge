@@ -286,7 +286,7 @@ class MqttCallbacks:
         self.var_topic_teslamate_charge_limit_soc = 0
         self.var_topic_teslamate_state = False
 
-        if config["ENABLE_TESLA_PROXY"] == True:
+        if config["ENABLE_TESLA_PROXY"] == "True":
             self.car_cmd = TeslaProxy()
         else:
             self.car_cmd = TeslaCommands()
