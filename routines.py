@@ -129,6 +129,7 @@ class PowerUsage:
                    str(math.floor(self.new_charge_rate)))
         return status
 
+
 class TeslaProxy:
     """Class to send commands to TeslaBleHttpProxy"""
     def __init__(self):
@@ -136,9 +137,15 @@ class TeslaProxy:
         self.tesla_vin = os.getenv("TESLA_VIN")
         self.tesla_proxy_host = os.getenv("PROXY_HOST")
         self.tesla_proxy_base_command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/command/"
+        # Test for existence of TeslaBleHttpProxy
+        if self.tesla_proxy_host == None:
+            logging.critical("PROXY_HOST not configured")
+            logging.critical("Please point to TeslaBleHttpProxy in .env")
+            sys.exit(1)
 
     def set_charge_rate(self, charge_rate):
         command = self.tesla_proxy_base_command + "set_charging_amps"
+        logging.debug(command)
         data = {}
         data["charging_amps"] = charge_rate
         rc = call_http_post(command, data)
@@ -147,11 +154,13 @@ class TeslaProxy:
 
     def start_charging(self):
         command = self.tesla_proxy_base_command + "charge_start"
+        logging.debug(command)
         data = ""
         return call_http_post(command, data)
 
     def stop_charging(self):
         command = self.tesla_proxy_base_command + "charge_stop"
+        logging.debug(command)
         data = ""
         rc = call_http_post(command, data)
         time.sleep(5)
@@ -159,8 +168,10 @@ class TeslaProxy:
 
     def wake(self):
         command = self.tesla_proxy_base_command + "wake_up"
+        logging.debug(command)
         data = ""
         return call_http_post(command, data)
+
 
 def call_http_post(cmd, data):
     if data == "":
@@ -234,8 +245,7 @@ def call_sub_error_handler(cmd):
         elif "is_charging" in error.stderr:
             # We have a match for "car could not execute command: is_charging" (already charging condition)
             logging.info("Attempted to start charging when car was already charging!")
-            # Return True as this isn't really an error condition
-            return True, 0
+            return True, 0    # Return True as this isn't really an error condition
         elif "context deadline exceeded" in error.stderr:
             # We have a match for the timeout error
             logging.warning("Last Tesla command timed out")
