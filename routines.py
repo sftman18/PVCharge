@@ -286,7 +286,10 @@ class MqttCallbacks:
         self.var_topic_teslamate_charge_limit_soc = 0
         self.var_topic_teslamate_state = False
 
-        self.car_cmd = TeslaProxy()
+        if config["ENABLE_TESLA_PROXY"] == True:
+            self.car_cmd = TeslaProxy()
+        else:
+            self.car_cmd = TeslaCommands()
 
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=self.client_id, protocol=mqtt.MQTTv311,
                                   clean_session=True)

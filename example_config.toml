@@ -2,6 +2,7 @@
 LOG_FILE = 'PVCharge.log'           # Log file name to use
 LOG_LEVEL = "INFO"                  # Default INFO, change to DEBUG to diagnose issues
 PREVENT_NON_SOLAR_CHARGE = "False"  # Default for after-hours charging, unless changed via MQTT
+ENABLE_TESLA_PROXY = "False"        # Optionally enable TeslaBleHttpProxy (requires additional parameter in .env, and a running proxy)
 
 # MQTT Control topics
 TOPIC_PREVENT_NON_SOLAR_CHARGE =   "topic_base/prevent_non_solar_charge"
