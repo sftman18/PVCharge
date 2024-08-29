@@ -18,6 +18,11 @@ load_dotenv()
 with open("config.toml", mode="rb") as fp:
     config = tomllib.load(fp)
 
+# Test if we have parameters for TeslaBleHttpProxy
+if "ENABLE_TESLA_PROXY" in config:
+    tesla_proxy_config_exists = config["ENABLE_TESLA_PROXY"]
+else:
+    tesla_proxy_config_exists = "False"
 
 class PowerUsage:
     """Class to request data from the eGauge web API"""
@@ -296,7 +301,7 @@ class MqttCallbacks:
         self.var_topic_teslamate_charge_limit_soc = 0
         self.var_topic_teslamate_state = False
 
-        if config["ENABLE_TESLA_PROXY"] == "True":
+        if tesla_proxy_config_exists == "True":
             self.car_cmd = TeslaProxy()
         else:
             self.car_cmd = TeslaCommands()
