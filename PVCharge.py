@@ -22,21 +22,20 @@ elif config["LOG_LEVEL"] == "DEBUG":
 else:
     logging.warning("Unknown logging level")
 
-# Test if we have parameters for TeslaBleHttpProxy
-if "ENABLE_TESLA_PROXY" in config:
-    tesla_proxy_config_exists = config["ENABLE_TESLA_PROXY"]
-else:
-    tesla_proxy_config_exists = "False"
 
 # Initialize classes
 Energy = routines.PowerUsage()
-if tesla_proxy_config_exists == "True":
-    logging.debug("Using TeslaProxy")
-    Car = routines.TeslaProxy()
+Messages = routines.MqttCallbacks()
+if "ENABLE_TESLA_PROXY" in config:
+    if config["ENABLE_TESLA_PROXY"] == "True":
+        logging.debug("Using TeslaProxy")
+        Car = routines.TeslaProxy()
+    else:
+        logging.debug("Using TeslaCommands")
+        Car = routines.TeslaCommands()
 else:
     logging.debug("Using TeslaCommands")
     Car = routines.TeslaCommands()
-Messages = routines.MqttCallbacks()
 
 # Control loop variables
 car_is_charging = False
