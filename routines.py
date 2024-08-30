@@ -5,6 +5,7 @@ import math
 import time
 import logging
 import tomllib
+import requests
 from dotenv import load_dotenv
 from egauge import webapi
 from egauge.webapi.device import Register, Local
@@ -129,6 +130,62 @@ class PowerUsage:
         return status
 
 
+class TeslaProxy:
+    """Class to send commands to TeslaBleHttpProxy"""
+    def __init__(self):
+        # Load parameters from .env
+        self.tesla_vin = os.getenv("TESLA_VIN")
+        self.tesla_proxy_host = os.getenv("PROXY_HOST")
+        # Test for existence of TeslaBleHttpProxy
+        if self.tesla_proxy_host == None:
+            logging.critical("PROXY_HOST not configured")
+            logging.critical("Please point to TeslaBleHttpProxy in .env")
+            sys.exit(1)
+        self.tesla_proxy_base_command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/command/"
+
+    def set_charge_rate(self, charge_rate):
+        command = self.tesla_proxy_base_command + "set_charging_amps"
+        logging.debug(command)
+        data = {}
+        data["charging_amps"] = charge_rate
+        rc = call_http_post(command, data)
+        time.sleep(5)
+        return rc
+
+    def start_charging(self):
+        command = self.tesla_proxy_base_command + "charge_start"
+        logging.debug(command)
+        data = ""
+        return call_http_post(command, data)
+
+    def stop_charging(self):
+        command = self.tesla_proxy_base_command + "charge_stop"
+        logging.debug(command)
+        data = ""
+        rc = call_http_post(command, data)
+        time.sleep(5)
+        return rc
+
+    def wake(self):
+        command = self.tesla_proxy_base_command + "wake_up"
+        logging.debug(command)
+        data = ""
+        return call_http_post(command, data)
+
+
+def call_http_post(cmd, data):
+    if data == "":
+        r = requests.post(url=cmd, data=data)
+    else:
+        r = requests.post(url=cmd, json=data)
+    if r.status_code == 200:    # good return code
+        result = r.json()
+        logging.debug(result)
+    else:
+        logging.warning(result)
+    return result["response"]["result"]
+
+
 class TeslaCommands:
     """Class to handle commands sent to Tesla Vehicle Command SDK"""
     def __init__(self):
@@ -239,7 +296,13 @@ class MqttCallbacks:
         self.var_topic_teslamate_charge_limit_soc = 0
         self.var_topic_teslamate_state = False
 
-        self.car_cmd = TeslaCommands()
+        if "ENABLE_TESLA_PROXY" in config:
+            if config["ENABLE_TESLA_PROXY"] == "True":
+                self.car_cmd = TeslaProxy()
+            else:
+                self.car_cmd = TeslaCommands()
+        else:
+            self.car_cmd = TeslaCommands()
 
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=self.client_id, protocol=mqtt.MQTTv311,
                                   clean_session=True)

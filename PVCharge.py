@@ -25,8 +25,17 @@ else:
 
 # Initialize classes
 Energy = routines.PowerUsage()
-Car = routines.TeslaCommands()
 Messages = routines.MqttCallbacks()
+if "ENABLE_TESLA_PROXY" in config:
+    if config["ENABLE_TESLA_PROXY"] == "True":
+        logging.debug("Using TeslaProxy")
+        Car = routines.TeslaProxy()
+    else:
+        logging.debug("Using TeslaCommands")
+        Car = routines.TeslaCommands()
+else:
+    logging.debug("Using TeslaCommands")
+    Car = routines.TeslaCommands()
 
 # Control loop variables
 car_is_charging = False

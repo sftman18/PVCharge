@@ -4,7 +4,7 @@ An adaptive charging controller for your Tesla, enabling you to direct excess so
 
 ## Requirements
 - <a href="https://www.tesla.com/">Tesla vehicle</a>
-- Configured <a href="https://github.com/teslamotors/vehicle-command">Tesla Vehicle Command SDK</a> environment with <a href="https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control">tesla-control</a> available
+- Configured <a href="https://github.com/teslamotors/vehicle-command">Tesla Vehicle Command SDK</a> environment with <a href="https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control">tesla-control</a> available OR use the <a href="https://github.com/wimaha/TeslaBleHttpProxy">TeslaBleHttpProxy</a> (NEW!)
 - <a href="https://github.com/teslamate-org/teslamate">TeslaMate</a>
 - <a href="https://www.egauge.net">eGauge solar monitoring</a> with a CT on the charger circuit
 - Linux computer with Bluetooth, such as a <a href="https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/">Raspberry Pi Zero 2 W</a>
@@ -26,6 +26,12 @@ tesla-keygen -key-file /home/pi/.local/share/keyrings/private_key.pem create > p
 
 While in the car, pair with this command:
 tesla-control -ble add-key-request public_key.pem owner cloud_key</pre>
+
+## TeslaBleHttpProxy
+To use TeslaBleHttpProxy (not required if you are using <a href="https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control">tesla-control</a>), please follow the installation & configuration instructions <a href="https://github.com/wimaha/TeslaBleHttpProxy">here</a>
+- Add the PROXY_HOST parameter to your .env file (see example.env)
+- Enable use of the proxy by adding the ENABLE_TESLA_PROXY parameter to your config.toml file (see example_config.toml)<br>
+- Note, when TeslaBleHttpProxy is running it seems to take over local bluetooth hardware.  Please stop the proxy before switching back to the <a href="https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control">tesla-control</a> library.
 
 ## PVCharge Installation
 - Install Python (3.11+) and Git using your package manager<br>
