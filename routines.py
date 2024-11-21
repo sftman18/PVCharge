@@ -6,6 +6,7 @@ import time
 import logging
 import tomllib
 import requests
+import json
 from dotenv import load_dotenv
 from egauge import webapi
 from egauge.webapi.device import Register, Local
@@ -226,6 +227,29 @@ class TeslaCommands:
         logging.debug(command)
         result, delay = call_sub_error_handler(command, timeout=25)
         return result
+        
+    def read_body-controller-state(self):
+        command = self.tesla_base_command + ['body-controller-state']
+        logging.debug(command)
+		
+        valueJson = call_sub_error_handler_value(command, timeout=10)
+        if valueJson != "":
+        	output_dict = json.loads(valueJson)
+    	    val_port = output_dict["closureStatuses"]
+        return
+
+    def read_state_charge(self):
+        command = self.tesla_base_command + ['state', 'charge']
+        logging.debug(command)
+        
+        valueJson = call_sub_error_handler_value(command, timeout=10)
+        if valueJson != "":
+        	output_dict = json.loads(valueJson)
+    	    logging.debug(f"chargeState:{output_dict["chargeState"]})
+    	    logging.debug(f"chargeLimitSoc:{output_dict["chargeLimitSoc"]})
+    	    logging.debug(f"batteryLevel:{output_dict["batteryLevel"]})
+    	    logging.debug(f"chargePortDoorOpen:{output_dict["chargePortDoorOpen"]})            
+        return
 
 
 @timeoutable('Timeout')
@@ -257,6 +281,17 @@ def call_sub_error_handler(cmd):
             logging.warning(f"Error: {error.stderr}")
         return False, delay
     return True, 0
+    
+@timeoutable('Timeout')
+def call_sub_error_handler_value(cmd):
+    try:
+        result = subprocess.run(args=cmd, capture_output=True, text=True, check=True)
+        if result.stdout != "":
+            logging.debug(result.stdout)
+    except subprocess.CalledProcessError as error:
+        logging.debug(f"{type(error).__name__} - {error}")
+        logging.debug(f"Error: {error.stderr}")
+    return result.output
 
 def check_elapsed_time(loop_time, compare_time, wait_time):
     if compare_time == 0:
