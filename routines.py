@@ -194,6 +194,10 @@ class TeslaCommands:
         self.tesla_control_bin = os.getenv("TESLA_CONTROL_BIN")
         self.tesla_key_file = os.getenv("TESLA_KEY_FILE")
         self.tesla_base_command = [self.tesla_control_bin, '-ble', '-key-file', self.tesla_key_file]
+        self.chargingState = "Disconnected"
+        self.chargeLimitSoc = 0
+        self.batteryLevel = 0
+        self.chargePortDoorOpen = False
         # Test for existence of tesla-control
         if not os.path.exists(self.tesla_control_bin):
             logging.critical(f"tesla-control not found at: {self.tesla_control_bin}")
@@ -227,28 +231,45 @@ class TeslaCommands:
         logging.debug(command)
         result, delay = call_sub_error_handler(command, timeout=25)
         return result
-        
-    def read_body-controller-state(self):
+
+    def read_body_controller_state(self):
         command = self.tesla_base_command + ['body-controller-state']
         logging.debug(command)
-		
-        valueJson = call_sub_error_handler_value(command, timeout=10)
+
+        valueJson = call_sub_error_handler_value(command, timeout=20)
         if valueJson != "":
-        	output_dict = json.loads(valueJson)
-    	    val_port = output_dict["closureStatuses"]
+            output_dict = json.loads(valueJson)
+            sleep_state = output_dict["vehicleSleepStatus"]
+            if sleep_state == "VEHICLE_SLEEP_STATUS_UNKNOWN":
+                self.vehicleSleepStatus = 0
+            elif sleep_state == "VEHICLE_SLEEP_STATUS_AWAKE":
+                self.vehicleSleepStatus = 1
+            elif sleep_state == "VEHICLE_SLEEP_STATUS_ASLEEP":
+                self.vehicleSleepStatus = 2
+            print(f"{sleep_state}:{self.vehicleSleepStatus}")
         return
 
     def read_state_charge(self):
         command = self.tesla_base_command + ['state', 'charge']
         logging.debug(command)
-        
-        valueJson = call_sub_error_handler_value(command, timeout=10)
+
+        valueJson = call_sub_error_handler_value(command, timeout=20)
         if valueJson != "":
-        	output_dict = json.loads(valueJson)
-    	    logging.debug(f"chargeState:{output_dict["chargeState"]})
-    	    logging.debug(f"chargeLimitSoc:{output_dict["chargeLimitSoc"]})
-    	    logging.debug(f"batteryLevel:{output_dict["batteryLevel"]})
-    	    logging.debug(f"chargePortDoorOpen:{output_dict["chargePortDoorOpen"]})            
+            output_dict = json.loads(valueJson)
+            for key in output_dict['chargeState']:
+                if key == "chargingState":
+                    self.chargingState = output_dict['chargeState']['chargingState']
+                    self.chargingState = list(self.chargingState)[0]
+                    print(f"chargingState {self.chargingState}")
+                elif key == "chargeLimitSoc":
+                    self.chargeLimitSoc = output_dict['chargeState']['chargeLimitSoc']
+                    print(f"chargeLimitSoc {self.chargeLimitSoc}")
+                elif key == "batteryLevel":
+                    self.batteryLevel = output_dict['chargeState']['batteryLevel']
+                    print(f"batteryLevel {self.batteryLevel}")
+                elif key == "chargePortDoorOpen":
+                    self.chargePortDoorOpen = output_dict['chargeState']['chargePortDoorOpen']
+                    print(f"chargePortDoorOpen {self.chargePortDoorOpen}")
         return
 
 
@@ -281,7 +302,7 @@ def call_sub_error_handler(cmd):
             logging.warning(f"Error: {error.stderr}")
         return False, delay
     return True, 0
-    
+
 @timeoutable('Timeout')
 def call_sub_error_handler_value(cmd):
     try:
@@ -291,7 +312,7 @@ def call_sub_error_handler_value(cmd):
     except subprocess.CalledProcessError as error:
         logging.debug(f"{type(error).__name__} - {error}")
         logging.debug(f"Error: {error.stderr}")
-    return result.output
+    return result.stdout
 
 def check_elapsed_time(loop_time, compare_time, wait_time):
     if compare_time == 0:
