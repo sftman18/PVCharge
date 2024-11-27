@@ -240,14 +240,8 @@ class TeslaCommands:
         result, valueJson = call_sub_error_handler_value(command, timeout=25)
         if valueJson != "":
             output_dict = json.loads(valueJson)
-            sleep_state = output_dict["vehicleSleepStatus"]
-            if sleep_state == "VEHICLE_SLEEP_STATUS_UNKNOWN":
-                self.vehicleSleepStatus = 0
-            elif sleep_state == "VEHICLE_SLEEP_STATUS_AWAKE":
-                self.vehicleSleepStatus = 1
-            elif sleep_state == "VEHICLE_SLEEP_STATUS_ASLEEP":
-                self.vehicleSleepStatus = 2
-            logging.debug(f"{sleep_state}:{self.vehicleSleepStatus}")
+            self.vehicleSleepStatus = output_dict["vehicleSleepStatus"]
+            logging.debug(f"Sleep Status: {self.vehicleSleepStatus}")
         return result
 
     def read_state_charge(self):
@@ -322,6 +316,13 @@ def call_sub_error_handler_value(cmd):
             logging.warning("Last Tesla command timed out")
         return False, ""
     return True, result.stdout
+
+def calculate_charge_tesla(door_open, battery_level, charge_limit):
+    # Charge if: Car is plugged in (charge door open), and battery < charge_limit_soc
+    if (door_open & (battery_level < charge_limit)):
+        return True
+    else:
+        return False
 
 def check_elapsed_time(loop_time, compare_time, wait_time):
     if compare_time == 0:
