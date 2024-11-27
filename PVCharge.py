@@ -185,7 +185,7 @@ while True:
             if Car.read_state_charge():
                 logging.debug(f"Charging State: {Car.chargingState}, Charge Port Door Open: {Car.chargePortDoorOpen}")
                 logging.debug(f"Charge Limit: {Car.chargeLimitSoc}, Battery Level: {Car.batteryLevel}")
-                logging.info("Collect Status, updated successfully"
+                logging.info("Collect Status, updated successfully")
             else:
                 logging.warning("Collect Status, NOT updated")
         sample_time = loop_time    # Reset counter for next loop
