@@ -183,11 +183,11 @@ while True:
         Car.read_body_controller_state()
         if Car.vehicleSleepStatus == "VEHICLE_SLEEP_STATUS_AWAKE":
             if Car.read_state_charge():
-                print("Successful")
-                logging.info(f"Charging State: {Car.chargingState} Battery Door Open: {Car.chargePortDoorOpen}")
-                logging.info(f"Charge Limit: {Car.chargeLimitSoc} Battery Level: {Car.batteryLevel}")
+                logging.debug(f"Charging State: {Car.chargingState}, Charge Port Door Open: {Car.chargePortDoorOpen}")
+                logging.debug(f"Charge Limit: {Car.chargeLimitSoc}, Battery Level: {Car.batteryLevel}")
+                logging.info("Collect Status, updated successfully"
             else:
-                print("NOT Successful")
+                logging.warning("Collect Status, NOT updated")
         sample_time = loop_time    # Reset counter for next loop
 
     # Control loop delay

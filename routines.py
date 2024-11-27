@@ -194,7 +194,7 @@ class TeslaCommands:
         self.tesla_control_bin = os.getenv("TESLA_CONTROL_BIN")
         self.tesla_key_file = os.getenv("TESLA_KEY_FILE")
         self.tesla_base_command = [self.tesla_control_bin, '-ble', '-key-file', self.tesla_key_file]
-        self.vehicleSleepStatus = 0
+        self.vehicleSleepStatus = "VEHICLE_SLEEP_STATUS_UNKNOWN"
         self.chargingState = "Disconnected"
         self.chargeLimitSoc = 0
         self.batteryLevel = 0
@@ -256,19 +256,19 @@ class TeslaCommands:
                     # "chargeState": {"chargingState": { "Stopped":  {} }
                     self.chargingState = output_dict['chargeState']['chargingState']
                     self.chargingState = list(self.chargingState)[0]    # Convert to list and select the 1st element (the key)
-                    logging.debug(f"chargingState {self.chargingState}")
+                    logging.debug(f"Charging State: {self.chargingState}")
                 elif key == "chargeLimitSoc":
                     # "chargeState": {"chargeLimitSoc": 80
                     self.chargeLimitSoc = output_dict['chargeState']['chargeLimitSoc']
-                    logging.debug(f"chargeLimitSoc {self.chargeLimitSoc}")
+                    logging.debug(f"Charge Limit: {self.chargeLimitSoc}")
                 elif key == "batteryLevel":
                     # "chargeState": {"batteryLevel":  65
                     self.batteryLevel = output_dict['chargeState']['batteryLevel']
-                    logging.debug(f"batteryLevel {self.batteryLevel}")
+                    logging.debug(f"Battery Level: {self.batteryLevel}")
                 elif key == "chargePortDoorOpen":
                     # "chargeState": {"chargePortDoorOpen":  true
                     self.chargePortDoorOpen = output_dict['chargeState']['chargePortDoorOpen']
-                    logging.debug(f"chargePortDoorOpen {self.chargePortDoorOpen}")
+                    logging.debug(f"Charge Port Door Open: {self.chargePortDoorOpen}")
         return result
 
 
