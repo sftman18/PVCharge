@@ -237,7 +237,7 @@ class TeslaCommands:
         command = self.tesla_base_command + ['-command-timeout', '20s', 'body-controller-state']
         logging.debug(command)
 
-        valueJson = call_sub_error_handler_value(command, timeout=25)
+        result, valueJson = call_sub_error_handler_value(command, timeout=25)
         if valueJson != "":
             output_dict = json.loads(valueJson)
             sleep_state = output_dict["vehicleSleepStatus"]
@@ -247,14 +247,14 @@ class TeslaCommands:
                 self.vehicleSleepStatus = 1
             elif sleep_state == "VEHICLE_SLEEP_STATUS_ASLEEP":
                 self.vehicleSleepStatus = 2
-            print(f"{sleep_state}:{self.vehicleSleepStatus}")
-        return
+            logging.debug(f"{sleep_state}:{self.vehicleSleepStatus}")
+        return result
 
     def read_state_charge(self):
         command = self.tesla_base_command + ['-command-timeout', '20s', 'state', 'charge']
         logging.debug(command)
 
-        valueJson = call_sub_error_handler_value(command, timeout=25)
+        result, valueJson = call_sub_error_handler_value(command, timeout=25)
         if valueJson != "":
             output_dict = json.loads(valueJson)
             for key in output_dict['chargeState']:
@@ -262,20 +262,20 @@ class TeslaCommands:
                     # "chargeState": {"chargingState": { "Stopped":  {} }
                     self.chargingState = output_dict['chargeState']['chargingState']
                     self.chargingState = list(self.chargingState)[0]    # Convert to list and select the 1st element (the key)
-                    print(f"chargingState {self.chargingState}")
+                    logging.debug(f"chargingState {self.chargingState}")
                 elif key == "chargeLimitSoc":
                     # "chargeState": {"chargeLimitSoc": 80
                     self.chargeLimitSoc = output_dict['chargeState']['chargeLimitSoc']
-                    print(f"chargeLimitSoc {self.chargeLimitSoc}")
+                    logging.debug(f"chargeLimitSoc {self.chargeLimitSoc}")
                 elif key == "batteryLevel":
                     # "chargeState": {"batteryLevel":  65
                     self.batteryLevel = output_dict['chargeState']['batteryLevel']
-                    print(f"batteryLevel {self.batteryLevel}")
+                    logging.debug(f"batteryLevel {self.batteryLevel}")
                 elif key == "chargePortDoorOpen":
                     # "chargeState": {"chargePortDoorOpen":  true
                     self.chargePortDoorOpen = output_dict['chargeState']['chargePortDoorOpen']
-                    print(f"chargePortDoorOpen {self.chargePortDoorOpen}")
-        return
+                    logging.debug(f"chargePortDoorOpen {self.chargePortDoorOpen}")
+        return result
 
 
 @timeoutable('Timeout')
@@ -317,7 +317,11 @@ def call_sub_error_handler_value(cmd):
     except subprocess.CalledProcessError as error:
         logging.debug(f"{type(error).__name__} - {error}")
         logging.debug(f"Error: {error.stderr}")
-    return result.stdout
+        if "context deadline exceeded" in error.stderr:
+            # We have a match for the timeout error
+            logging.warning("Last Tesla command timed out")
+        return False, ""
+    return True, result.stdout
 
 def check_elapsed_time(loop_time, compare_time, wait_time):
     if compare_time == 0:
