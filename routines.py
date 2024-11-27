@@ -194,6 +194,7 @@ class TeslaCommands:
         self.tesla_control_bin = os.getenv("TESLA_CONTROL_BIN")
         self.tesla_key_file = os.getenv("TESLA_KEY_FILE")
         self.tesla_base_command = [self.tesla_control_bin, '-ble', '-key-file', self.tesla_key_file]
+        self.vehicleSleepStatus = 0
         self.chargingState = "Disconnected"
         self.chargeLimitSoc = 0
         self.batteryLevel = 0
@@ -233,10 +234,10 @@ class TeslaCommands:
         return result
 
     def read_body_controller_state(self):
-        command = self.tesla_base_command + ['body-controller-state']
+        command = self.tesla_base_command + ['-command-timeout', '20s', 'body-controller-state']
         logging.debug(command)
 
-        valueJson = call_sub_error_handler_value(command, timeout=20)
+        valueJson = call_sub_error_handler_value(command, timeout=25)
         if valueJson != "":
             output_dict = json.loads(valueJson)
             sleep_state = output_dict["vehicleSleepStatus"]
@@ -250,24 +251,28 @@ class TeslaCommands:
         return
 
     def read_state_charge(self):
-        command = self.tesla_base_command + ['state', 'charge']
+        command = self.tesla_base_command + ['-command-timeout', '20s', 'state', 'charge']
         logging.debug(command)
 
-        valueJson = call_sub_error_handler_value(command, timeout=20)
+        valueJson = call_sub_error_handler_value(command, timeout=25)
         if valueJson != "":
             output_dict = json.loads(valueJson)
             for key in output_dict['chargeState']:
                 if key == "chargingState":
+                    # "chargeState": {"chargingState": { "Stopped":  {} }
                     self.chargingState = output_dict['chargeState']['chargingState']
-                    self.chargingState = list(self.chargingState)[0]
+                    self.chargingState = list(self.chargingState)[0]    # Convert to list and select the 1st element (the key)
                     print(f"chargingState {self.chargingState}")
                 elif key == "chargeLimitSoc":
+                    # "chargeState": {"chargeLimitSoc": 80
                     self.chargeLimitSoc = output_dict['chargeState']['chargeLimitSoc']
                     print(f"chargeLimitSoc {self.chargeLimitSoc}")
                 elif key == "batteryLevel":
+                    # "chargeState": {"batteryLevel":  65
                     self.batteryLevel = output_dict['chargeState']['batteryLevel']
                     print(f"batteryLevel {self.batteryLevel}")
                 elif key == "chargePortDoorOpen":
+                    # "chargeState": {"chargePortDoorOpen":  true
                     self.chargePortDoorOpen = output_dict['chargeState']['chargePortDoorOpen']
                     print(f"chargePortDoorOpen {self.chargePortDoorOpen}")
         return
