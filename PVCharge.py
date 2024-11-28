@@ -198,7 +198,7 @@ while True:
                 ble_timeout_count = 0
                 logging.debug("Collect Status, NOT successful over 3 attempts, Resetting Variables")
             else:    # Increment the counter
-                ble_timeout_count++
+                ble_timeout_count += 1
         sample_time = loop_time    # Reset counter for next loop
 
     # Control loop delay
