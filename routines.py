@@ -271,6 +271,14 @@ class TeslaCommands:
                     logging.debug(f"Charge Port Door Open: {self.chargePortDoorOpen}")
         return result
 
+    def reset_variables(self):
+        # Reset car variables
+        self.vehicleSleepStatus = "VEHICLE_SLEEP_STATUS_UNKNOWN"
+        self.chargingState = "Disconnected"
+        self.chargeLimitSoc = 0
+        self.batteryLevel = 0
+        self.chargePortDoorOpen = False
+        return
 
 @timeoutable('Timeout')
 def call_sub_error_handler(cmd):

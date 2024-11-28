@@ -43,6 +43,7 @@ stop_charging_time = 0
 start_charging_time = 0
 report_time = time.time() - config["REPORT_DELAY"]
 sample_time = time.time() - 60
+ble_timeout_count = 0
 while True:
     # Record loop start time
     loop_time = time.time()
@@ -177,17 +178,27 @@ while True:
         Messages.client.publish(topic=config["TOPIC_STATUS"], payload=status, qos=1)
         report_time = loop_time    # Reset counter for next loop
 
-    # Collect car status over bluetooth every minute
-    sample_is_due, sample_time = routines.check_elapsed_time(loop_time, sample_time, 60)
+    # Collect car status over Bluetooth at Slow polling rate
+    sample_is_due, sample_time = routines.check_elapsed_time(loop_time, sample_time, config["SLOW_POLLING"])
     if sample_is_due:
-        Car.read_body_controller_state()
-        if Car.vehicleSleepStatus == "VEHICLE_SLEEP_STATUS_AWAKE":
-            if Car.read_state_charge():
-                logging.debug(f"Charging State: {Car.chargingState}, Charge Port Door Open: {Car.chargePortDoorOpen}")
-                logging.debug(f"Charge Limit: {Car.chargeLimitSoc}, Battery Level: {Car.batteryLevel}")
-                logging.info("Collect Status, updated successfully")
-            else:
-                logging.warning("Collect Status, NOT updated")
+        if Car.read_body_controller_state():
+            if Car.vehicleSleepStatus == "VEHICLE_SLEEP_STATUS_AWAKE":
+                if Car.read_state_charge():
+                    logging.debug(f"Charging State: {Car.chargingState}, Charge Port Door Open: {Car.chargePortDoorOpen}")
+                    logging.debug(f"Charge Limit: {Car.chargeLimitSoc}, Battery Level: {Car.batteryLevel}")
+                    logging.info("Collect Status, updated successfully")
+                    # Clear timeout counter
+                    ble_timeout_count = 0
+                else:
+                    logging.warning("Collect Status, NOT updated")
+        else:    # We weren't able to contact the car
+            if ble_timeout_count > 2:
+                # We weren't able to contact the car 3 times, reset the variables
+                Car.reset_variables()
+                ble_timeout_count = 0
+                logging.debug("Collect Status, NOT successful over 3 attempts, Resetting Variables")
+            else:    # Increment the counter
+                ble_timeout_count++
         sample_time = loop_time    # Reset counter for next loop
 
     # Control loop delay
