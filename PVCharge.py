@@ -192,11 +192,11 @@ while True:
                 else:
                     logging.warning("Collect Status, NOT updated")
         else:    # We weren't able to contact the car
-            if ble_timeout_count > 2:
-                # We weren't able to contact the car 3 times, reset the variables
+            if ble_timeout_count > 4:
+                # We weren't able to contact the car 5 times, reset the variables
                 Car.reset_variables()
                 ble_timeout_count = 0
-                logging.debug("Collect Status, NOT successful over 3 attempts, Resetting Variables")
+                logging.debug("Collect Status, NOT successful over 5 attempts, Resetting Variables")
             else:    # Increment the counter
                 ble_timeout_count += 1
         sample_time = loop_time    # Reset counter for next loop
