@@ -6,6 +6,7 @@ import time
 import logging
 import tomllib
 import requests
+import json
 from dotenv import load_dotenv
 from egauge import webapi
 from egauge.webapi.device import Register, Local
@@ -172,6 +173,30 @@ class TeslaProxy:
         data = ""
         return call_http_post(command, data)
 
+    def read_charge_state(self):
+        command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/vehicle_data?endpoints=charge_state"
+        logging.debug(command)
+        result, output_dict = call_http_get(command)
+        if result == True:
+            for key in output_dict['charge_state']:
+                if key == "charging_state":
+                    # "charge_state": {"charging_state": "Stopped"}
+                    self.chargingState = output_dict['charge_state']['charging_state']
+                    logging.debug(f"Charging State: {self.chargingState}")
+                elif key == "charge_limit_soc":
+                    # "charge_state": {"charge_limit_soc": 80}
+                    self.chargeLimitSoc = output_dict['charge_state']['charge_limit_soc']
+                    logging.debug(f"Charge Limit: {self.chargeLimitSoc}")
+                elif key == "battery_level":
+                    # "charge_state": {"battery_level":  65}
+                    self.batteryLevel = output_dict['charge_state']['battery_level']
+                    logging.debug(f"Battery Level: {self.batteryLevel}")
+                elif key == "charge_port_door_open":
+                    # "charge_state": {"charge_port_door_open":  True}
+                    self.chargePortDoorOpen = output_dict['charge_state']['charge_port_door_open']
+                    logging.debug(f"Charge Port Door Open: {self.chargePortDoorOpen}")
+        return result
+
 
 def call_http_post(cmd, data):
     if data == "":
@@ -184,6 +209,15 @@ def call_http_post(cmd, data):
     else:
         logging.warning(result)
     return result["response"]["result"]
+
+def call_http_get(cmd):
+    r = requests.get(url=cmd)
+    if r.status_code == 200:    # good return code
+        data = r.json()
+        logging.debug(data)
+    else:
+        logging.warning(data)
+    return data["result"], data["response"]
 
 
 class TeslaCommands:
