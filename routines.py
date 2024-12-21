@@ -137,6 +137,11 @@ class TeslaProxy:
         # Load parameters from .env
         self.tesla_vin = os.getenv("TESLA_VIN")
         self.tesla_proxy_host = os.getenv("PROXY_HOST")
+        self.vehicleSleepStatus = "VEHICLE_SLEEP_STATUS_UNKNOWN"
+        self.chargingState = "Disconnected"
+        self.chargeLimitSoc = 0
+        self.batteryLevel = 0
+        self.chargePortDoorOpen = False
         # Test for existence of TeslaBleHttpProxy
         if self.tesla_proxy_host == None:
             logging.critical("PROXY_HOST not configured")
@@ -197,6 +202,23 @@ class TeslaProxy:
                     logging.debug(f"Charge Port Door Open: {self.chargePortDoorOpen}")
         return result
 
+    def read_body_controller_state(self):
+        command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/body_controller_state"
+        logging.debug(command)
+        result, output_dict = call_http_get(command)
+        print(output_dict)
+        self.vehicleSleepStatus = output_dict["vehicleSleepStatus"]
+        logging.debug(f"Sleep Status: {self.vehicleSleepStatus}")
+        return result
+
+    def reset_variables(self):
+        # Reset car variables
+        self.chargingState = "Disconnected"
+        self.chargeLimitSoc = 0
+        self.batteryLevel = 0
+        self.chargePortDoorOpen = False
+        return
+
 
 def call_http_post(cmd, data):
     if data == "":
@@ -206,18 +228,27 @@ def call_http_post(cmd, data):
     if r.status_code == 200:    # good return code
         result = r.json()
         logging.debug(result)
+        return result["response"]["result"]
     else:
-        logging.warning(result)
-    return result["response"]["result"]
+        logging.warning("TeslaProxy did not respond")
+        return False
 
 def call_http_get(cmd):
     r = requests.get(url=cmd)
     if r.status_code == 200:    # good return code
         data = r.json()
         logging.debug(data)
+        return data["result"], data["response"]
     else:
-        logging.warning(data)
-    return data["result"], data["response"]
+        logging.warning("TeslaProxy did not respond")
+        return False, ""
+
+def calculate_charge_tesla(door_open, battery_level, charge_limit):
+    # Charge if: Car is plugged in (charge door open), and battery < charge_limit_soc
+    if (door_open & (battery_level < charge_limit)):
+        return True
+    else:
+        return False
 
 
 class TeslaCommands:
