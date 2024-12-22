@@ -138,6 +138,7 @@ class TeslaProxy:
         self.tesla_vin = os.getenv("TESLA_VIN")
         self.tesla_proxy_host = os.getenv("PROXY_HOST")
         self.vehicleSleepStatus = "VEHICLE_SLEEP_STATUS_UNKNOWN"
+        self.chargePortStatus = "CLOSURESTATE_CLOSED"
         self.chargingState = "Disconnected"
         self.chargeLimitSoc = 0
         self.batteryLevel = 0
@@ -207,12 +208,21 @@ class TeslaProxy:
         logging.debug(command)
         result, output_dict = call_http_get(command)
         print(output_dict)
-        self.vehicleSleepStatus = output_dict["vehicleSleepStatus"]
-        logging.debug(f"Sleep Status: {self.vehicleSleepStatus}")
+        if result == True:
+            self.vehicleSleepStatus = output_dict["vehicleSleepStatus"]
+            logging.debug(f"Sleep Status: {self.vehicleSleepStatus}")
+            if "closureStatuses" in output_dict:
+                self.chargePortStatus = output_dict["closureStatuses"]["chargePort"]
+                logging.debug(f"Port Status: {self.chargePortStatus}")
+            else:
+                self.chargePortStatus = "CLOSURESTATE_CLOSED"
+                logging.debug(f"Port Status assumed: CLOSURESTATE_CLOSED")
         return result
 
     def reset_variables(self):
         # Reset car variables
+        self.vehicleSleepStatus = "VEHICLE_SLEEP_STATUS_UNKNOWN"
+        self.chargePortStatus = "CLOSURESTATE_CLOSED"
         self.chargingState = "Disconnected"
         self.chargeLimitSoc = 0
         self.batteryLevel = 0
@@ -238,7 +248,7 @@ def call_http_get(cmd):
     if r.status_code == 200:    # good return code
         data = r.json()
         logging.debug(data)
-        return data["result"], data["response"]
+        return data["response"]["result"], data["response"]["response"]
     else:
         logging.warning("TeslaProxy did not respond")
         return False, ""
