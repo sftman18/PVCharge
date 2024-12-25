@@ -37,6 +37,18 @@ else:
     logging.debug("Using TeslaCommands")
     Car = routines.TeslaCommands()
 
+# Initial poll for car statuses
+if Car.read_body_controller_state():
+    if Car.vehicleSleepStatus == "VEHICLE_SLEEP_STATUS_AWAKE":
+        if Car.read_charge_state():
+            logging.debug("Car awake, initial status read")
+        else:
+            logging.warning("Car awake, initial status NOT read")
+    else:
+        logging.debug("Car asleep, initial status read")
+else:
+    logging.warning("Failed to read intial car status")
+
 # Control loop variables
 car_is_charging = False
 stop_charging_time = 0
@@ -114,6 +126,7 @@ while True:
                                 if Car.wake():
                                     logging.info("Car is NOT charging, Energy is Available, car woken successfully")
                                     time.sleep(5)    # Wait until car is awake
+                                    Car.read_charge_state()    # Ensure car status variables are properly updated
                                 else:
                                     logging.warning("Car was NOT woken successfully")
                             if Car.start_charging() == True:

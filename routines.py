@@ -138,7 +138,6 @@ class TeslaProxy:
         self.tesla_vin = os.getenv("TESLA_VIN")
         self.tesla_proxy_host = os.getenv("PROXY_HOST")
         self.vehicleSleepStatus = "VEHICLE_SLEEP_STATUS_UNKNOWN"
-        self.chargePortStatus = "CLOSURESTATE_CLOSED"
         self.chargingState = "Disconnected"
         self.chargeLimitSoc = 0
         self.batteryLevel = 0
@@ -151,38 +150,50 @@ class TeslaProxy:
         self.tesla_proxy_base_command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/command/"
 
     def set_charge_rate(self, charge_rate):
-        command = self.tesla_proxy_base_command + "set_charging_amps"
+        command = self.tesla_proxy_base_command + "set_charging_amps?wait=true"
         logging.debug(command)
         data = {}
         data["charging_amps"] = charge_rate
-        rc = call_http_post(command, data)
-        time.sleep(5)
+        rc = call_http_post(command, data, timeout=60)
+        if rc == 'Timeout':
+            logging.warning("TeslaProxy timed out")
+            return False
         return rc
 
     def start_charging(self):
-        command = self.tesla_proxy_base_command + "charge_start"
+        command = self.tesla_proxy_base_command + "charge_start?wait=true"
         logging.debug(command)
         data = ""
-        return call_http_post(command, data)
+        rc = call_http_post(command, data, timeout=60)
+        if rc == 'Timeout':
+            logging.warning("TeslaProxy timed out")
+            return False
+        return rc
 
     def stop_charging(self):
-        command = self.tesla_proxy_base_command + "charge_stop"
+        command = self.tesla_proxy_base_command + "charge_stop?wait=true"
         logging.debug(command)
         data = ""
-        rc = call_http_post(command, data)
-        time.sleep(5)
+        rc = call_http_post(command, data, timeout=60)
+        if rc == 'Timeout':
+            logging.warning("TeslaProxy timed out")
+            return False
         return rc
 
     def wake(self):
-        command = self.tesla_proxy_base_command + "wake_up"
+        command = self.tesla_proxy_base_command + "wake_up?wait=true"
         logging.debug(command)
         data = ""
-        return call_http_post(command, data)
+        rc = call_http_post(command, data, timeout=60)
+        if rc == 'Timeout':
+            logging.warning("TeslaProxy timed out")
+            return False
+        return rc
 
     def read_charge_state(self):
         command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/vehicle_data?endpoints=charge_state"
         logging.debug(command)
-        result, output_dict = call_http_get(command)
+        result, output_dict = call_http_get(command, timeout=60)
         if result == True:
             for key in output_dict['charge_state']:
                 if key == "charging_state":
@@ -206,23 +217,15 @@ class TeslaProxy:
     def read_body_controller_state(self):
         command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/body_controller_state"
         logging.debug(command)
-        result, output_dict = call_http_get(command)
-        print(output_dict)
+        result, output_dict = call_http_get(command, timeout=60)
         if result == True:
             self.vehicleSleepStatus = output_dict["vehicleSleepStatus"]
             logging.debug(f"Sleep Status: {self.vehicleSleepStatus}")
-            if "closureStatuses" in output_dict:
-                self.chargePortStatus = output_dict["closureStatuses"]["chargePort"]
-                logging.debug(f"Port Status: {self.chargePortStatus}")
-            else:
-                self.chargePortStatus = "CLOSURESTATE_CLOSED"
-                logging.debug(f"Port Status assumed: CLOSURESTATE_CLOSED")
         return result
 
     def reset_variables(self):
         # Reset car variables
         self.vehicleSleepStatus = "VEHICLE_SLEEP_STATUS_UNKNOWN"
-        self.chargePortStatus = "CLOSURESTATE_CLOSED"
         self.chargingState = "Disconnected"
         self.chargeLimitSoc = 0
         self.batteryLevel = 0
@@ -230,6 +233,7 @@ class TeslaProxy:
         return
 
 
+@timeoutable('Timeout')
 def call_http_post(cmd, data):
     if data == "":
         r = requests.post(url=cmd, data=data)
@@ -243,6 +247,7 @@ def call_http_post(cmd, data):
         logging.warning("TeslaProxy did not respond")
         return False
 
+@timeoutable('Timeout')
 def call_http_get(cmd):
     r = requests.get(url=cmd)
     if r.status_code == 200:    # good return code
