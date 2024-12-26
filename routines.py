@@ -142,6 +142,8 @@ class TeslaProxy:
         self.chargeLimitSoc = 0
         self.batteryLevel = 0
         self.chargePortDoorOpen = False
+        self.ChargeStateReadSuccess = 0
+        self.BodyControllerReadSuccess = 0
         # Test for existence of TeslaBleHttpProxy
         if self.tesla_proxy_host == None:
             logging.critical("PROXY_HOST not configured")
@@ -195,6 +197,7 @@ class TeslaProxy:
         logging.debug(command)
         result, output_dict = call_http_get(command, timeout=60)
         if result == True:
+            self.ChargeStateReadSuccess = time.time()
             for key in output_dict['charge_state']:
                 if key == "charging_state":
                     # "charge_state": {"charging_state": "Stopped"}
@@ -220,6 +223,7 @@ class TeslaProxy:
         result, output_dict = call_http_get(command, timeout=60)
         if result == True:
             self.vehicleSleepStatus = output_dict["vehicleSleepStatus"]
+            self.BodyControllerReadSuccess = time.time()
             logging.debug(f"Sleep Status: {self.vehicleSleepStatus}")
         return result
 
@@ -230,6 +234,8 @@ class TeslaProxy:
         self.chargeLimitSoc = 0
         self.batteryLevel = 0
         self.chargePortDoorOpen = False
+        self.ChargeStateReadSuccess = 0
+        self.BodyControllerReadSuccess = 0
         return
 
 
