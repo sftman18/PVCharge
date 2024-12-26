@@ -250,7 +250,7 @@ def call_http_post(cmd, data):
         logging.debug(result)
         return result["response"]["result"]
     else:
-        logging.warning("TeslaProxy did not respond")
+        http_error_handler(data["response"]["reason"])
         return False
 
 @timeoutable('Timeout')
@@ -261,8 +261,19 @@ def call_http_get(cmd):
         logging.debug(data)
         return data["response"]["result"], data["response"]["response"]
     else:
-        logging.warning("TeslaProxy did not respond")
+        http_error_handler(data["response"]["reason"])
         return False, ""
+
+def http_error_handler(reason):
+    if "context deadline exceeded" in reason:
+        # We have a match for the timeout error
+        logging.warning("Last Tesla command timed out")
+    elif "read/write on closed pipe" in reason:
+        # Match for ATT request failed read/write on closed pipe
+        logging.warning("Last Tesla command failed to connect over Bluetooth")
+    else:
+        logging.warning("Unknown error, note error output")
+        logging.warning(f"Error: {reason}")
 
 def calculate_charge_tesla(door_open, battery_level, charge_limit):
     # Charge if: Car is plugged in (charge door open), and battery < charge_limit_soc

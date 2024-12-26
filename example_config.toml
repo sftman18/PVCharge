@@ -13,8 +13,13 @@ TOPIC_TESLAMATE_BATTERY_LEVEL =    "teslamate/cars/$car_id/battery_level"
 TOPIC_TESLAMATE_CHARGE_LIMIT_SOC = "teslamate/cars/$car_id/charge_limit_soc"
 TOPIC_TESLAMATE_STATE =            "teslamate/cars/$car_id/state"
 # MQTT Status topics
-TOPIC_STATUS =      "topic_base/status"
-TOPIC_CHARGE_RATE = "topic_base/new_charge_rate"
+TOPIC_STATUS =                "topic_base/status"
+TOPIC_CHARGE_RATE =           "topic_base/new_charge_rate"
+TOPIC_CAR_NOT_HOME =          "topic_base/car_not_home"
+TOPIC_CHARGING_STATE =        "topic_base/charging_state"
+TOPIC_CHARGE_PORT_DOOR_OPEN = "topic_base/charge_port_door_open"
+TOPIC_CHARGE_LIMIT_SOC =      "topic_base/charge_limit_soc"
+TOPIC_BATTERY_LEVEL =         "topic_base/battery_level"
 
 # Control loop parameters
 MIN_CHARGE = 7           # Slowest allowed charge rate (Amps)
