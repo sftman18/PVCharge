@@ -152,7 +152,7 @@ class TeslaProxy:
         self.tesla_proxy_base_command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/command/"
 
     def set_charge_rate(self, charge_rate):
-        command = self.tesla_proxy_base_command + "set_charging_amps?wait=true"
+        command = self.tesla_proxy_base_command + "set_charging_amps"
         logging.debug(command)
         data = {}
         data["charging_amps"] = charge_rate
@@ -163,7 +163,7 @@ class TeslaProxy:
         return rc
 
     def start_charging(self):
-        command = self.tesla_proxy_base_command + "charge_start?wait=true"
+        command = self.tesla_proxy_base_command + "charge_start"
         logging.debug(command)
         data = ""
         rc = call_http_post(command, data, timeout=60)
@@ -173,7 +173,7 @@ class TeslaProxy:
         return rc
 
     def stop_charging(self):
-        command = self.tesla_proxy_base_command + "charge_stop?wait=true"
+        command = self.tesla_proxy_base_command + "charge_stop"
         logging.debug(command)
         data = ""
         rc = call_http_post(command, data, timeout=60)
@@ -183,7 +183,7 @@ class TeslaProxy:
         return rc
 
     def wake(self):
-        command = self.tesla_proxy_base_command + "wake_up?wait=true"
+        command = self.tesla_proxy_base_command + "wake_up"
         logging.debug(command)
         data = ""
         rc = call_http_post(command, data, timeout=60)
@@ -245,19 +245,21 @@ def call_http_post(cmd, data):
         r = requests.post(url=cmd, data=data)
     else:
         r = requests.post(url=cmd, json=data)
+    result = r.json()
     if r.status_code == 200:    # good return code
-        result = r.json()
+        #result = r.json()
         logging.debug(result)
         return result["response"]["result"]
     else:
-        http_error_handler(data["response"]["reason"])
+        http_error_handler(result["response"]["reason"])
         return False
 
 @timeoutable('Timeout')
 def call_http_get(cmd):
     r = requests.get(url=cmd)
+    data = r.json()
     if r.status_code == 200:    # good return code
-        data = r.json()
+        #data = r.json()
         logging.debug(data)
         return data["response"]["result"], data["response"]["response"]
     else:
