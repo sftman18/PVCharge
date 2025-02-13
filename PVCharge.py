@@ -215,6 +215,7 @@ while True:
             car_not_home, Car.BodyControllerReadSuccess = routines.check_elapsed_time(loop_time, Car.BodyControllerReadSuccess, config["HOME_TIMEOUT"])
             if car_not_home:
                 # We haven't heard from the car for too long, reset variables
+                logging.debug("Resetting car variables")
                 Car.reset_variables()
                 Messages.client.publish(topic=config["TOPIC_CAR_NOT_HOME"], payload=True, qos=1)
         sample_time = loop_time    # Reset counter for next loop
