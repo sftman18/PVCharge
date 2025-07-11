@@ -222,7 +222,7 @@ class TeslaProxy:
         logging.debug(command)
         result, output_dict = call_http_get(command, timeout=60)
         if result == True:
-            self.vehicleSleepStatus = output_dict["vehicleSleepStatus"]
+            self.vehicleSleepStatus = output_dict["vehicle_sleep_status"]
             self.BodyControllerReadSuccess = time.time()
             logging.debug(f"Sleep Status: {self.vehicleSleepStatus}")
         return result
