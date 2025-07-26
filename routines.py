@@ -218,7 +218,8 @@ class TeslaProxy:
         return result
 
     def read_body_controller_state(self):
-        command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/body_controller_state"
+        # Lenart12's fork adds "proxy" after api for this command
+        command = self.tesla_proxy_host + "/api/proxy/1/vehicles/" + self.tesla_vin + "/body_controller_state"
         logging.debug(command)
         result, output_dict = call_http_get(command, timeout=60)
         if result == True:
