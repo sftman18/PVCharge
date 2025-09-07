@@ -379,22 +379,22 @@ class MqttCallbacks:
         self.client_id = os.getenv("CLIENT_ID")
         self.topic_prevent_non_solar_charge = config["TOPIC_PREVENT_NON_SOLAR_CHARGE"]
         self.topic_charge_delay = config["TOPIC_CHARGE_DELAY"]
-#        self.topic_teslamate_geofence = config["TOPIC_TESLAMATE_GEOFENCE"]
-#        self.topic_teslamate_plugged_in = config["TOPIC_TESLAMATE_PLUGGED_IN"]
-#        self.topic_teslamate_battery_level = config["TOPIC_TESLAMATE_BATTERY_LEVEL"]
-#        self.topic_teslamate_charge_limit_soc = config["TOPIC_TESLAMATE_CHARGE_LIMIT_SOC"]
-#        self.topic_teslamate_state = config["TOPIC_TESLAMATE_STATE"]
+        self.topic_teslamate_geofence = config["TOPIC_TESLAMATE_GEOFENCE"]
+        self.topic_teslamate_plugged_in = config["TOPIC_TESLAMATE_PLUGGED_IN"]
+        self.topic_teslamate_battery_level = config["TOPIC_TESLAMATE_BATTERY_LEVEL"]
+        self.topic_teslamate_charge_limit_soc = config["TOPIC_TESLAMATE_CHARGE_LIMIT_SOC"]
+        self.topic_teslamate_state = config["TOPIC_TESLAMATE_STATE"]
         if config["PREVENT_NON_SOLAR_CHARGE"] == "True":
             self.var_topic_prevent_non_solar_charge = True
         else:
             self.var_topic_prevent_non_solar_charge = False
         self.var_topic_charge_delay = 0
         self.var_charge_delay_time = 0
-#        self.var_topic_teslamate_geofence = False
-#        self.var_topic_teslamate_plugged_in = True
-#        self.var_topic_teslamate_battery_level = 0
-#        self.var_topic_teslamate_charge_limit_soc = 0
-#        self.var_topic_teslamate_state = False
+        self.var_topic_teslamate_geofence = False
+        self.var_topic_teslamate_plugged_in = True
+        self.var_topic_teslamate_battery_level = 0
+        self.var_topic_teslamate_charge_limit_soc = 0
+        self.var_topic_teslamate_state = False
 
         if "ENABLE_TESLA_PROXY" in config:
             if config["ENABLE_TESLA_PROXY"] == "True":
@@ -409,11 +409,11 @@ class MqttCallbacks:
         self.client.on_connect = self.on_connect
         self.client.message_callback_add(self.topic_prevent_non_solar_charge, self.on_message_prevent_non_solar_charge)
         self.client.message_callback_add(self.topic_charge_delay, self.on_message_charge_delay)
-#        self.client.message_callback_add(self.topic_teslamate_geofence, self.on_message_geofence)
-#        self.client.message_callback_add(self.topic_teslamate_plugged_in, self.on_message_plugged_in)
-#        self.client.message_callback_add(self.topic_teslamate_battery_level, self.on_message_battery_level)
-#        self.client.message_callback_add(self.topic_teslamate_charge_limit_soc, self.on_message_charge_limit_soc)
-#        self.client.message_callback_add(self.topic_teslamate_state, self.on_message_state)
+        self.client.message_callback_add(self.topic_teslamate_geofence, self.on_message_geofence)
+        self.client.message_callback_add(self.topic_teslamate_plugged_in, self.on_message_plugged_in)
+        self.client.message_callback_add(self.topic_teslamate_battery_level, self.on_message_battery_level)
+        self.client.message_callback_add(self.topic_teslamate_charge_limit_soc, self.on_message_charge_limit_soc)
+        self.client.message_callback_add(self.topic_teslamate_state, self.on_message_state)
         self.client.connect(host=self.broker, port=self.port, keepalive=60)
         self.client.loop_start()
 
@@ -425,16 +425,16 @@ class MqttCallbacks:
         logging.debug(f"Subscribed to: {self.topic_prevent_non_solar_charge}")
         self.client.subscribe(topic=self.topic_charge_delay, qos=1)
         logging.debug(f"Subscribed to: {self.topic_charge_delay}")
-#        self.client.subscribe(topic=self.topic_teslamate_geofence, qos=1)
-#        logging.debug(f"Subscribed to: {self.topic_teslamate_geofence}")
-#        self.client.subscribe(topic=self.topic_teslamate_plugged_in, qos=1)
-#        logging.debug(f"Subscribed to: {self.topic_teslamate_plugged_in}")
-#        self.client.subscribe(topic=self.topic_teslamate_battery_level, qos=1)
-#        logging.debug(f"Subscribed to: {self.topic_teslamate_battery_level}")
-#        self.client.subscribe(topic=self.topic_teslamate_charge_limit_soc, qos=1)
-#        logging.debug(f"Subscribed to: {self.topic_teslamate_charge_limit_soc}")
-#        self.client.subscribe(topic=self.topic_teslamate_state, qos=1)
-#        logging.debug(f"Subscribed to: {self.topic_teslamate_state}")
+        self.client.subscribe(topic=self.topic_teslamate_geofence, qos=1)
+        logging.debug(f"Subscribed to: {self.topic_teslamate_geofence}")
+        self.client.subscribe(topic=self.topic_teslamate_plugged_in, qos=1)
+        logging.debug(f"Subscribed to: {self.topic_teslamate_plugged_in}")
+        self.client.subscribe(topic=self.topic_teslamate_battery_level, qos=1)
+        logging.debug(f"Subscribed to: {self.topic_teslamate_battery_level}")
+        self.client.subscribe(topic=self.topic_teslamate_charge_limit_soc, qos=1)
+        logging.debug(f"Subscribed to: {self.topic_teslamate_charge_limit_soc}")
+        self.client.subscribe(topic=self.topic_teslamate_state, qos=1)
+        logging.debug(f"Subscribed to: {self.topic_teslamate_state}")
 
     def on_message_prevent_non_solar_charge(self, client, userdata, msg):
         logging.debug(msg.payload.decode('utf-8'))
@@ -456,46 +456,46 @@ class MqttCallbacks:
             self.var_charge_delay_time = 0
         logging.debug(f"Charge delay: {self.var_topic_charge_delay / 60} minutes")
 
-#    def on_message_geofence(self, client, userdata, msg):
-#        logging.debug(msg.payload.decode('utf-8'))
-#        if msg.payload.decode("utf-8") == "Home":
-#            self.var_topic_teslamate_geofence = True
-#        else:  # All messages not matching "Home" mapped to "False"
-#            self.var_topic_teslamate_geofence = False
+    def on_message_geofence(self, client, userdata, msg):
+        logging.debug(msg.payload.decode('utf-8'))
+        if msg.payload.decode("utf-8") == "Home":
+            self.var_topic_teslamate_geofence = True
+        else:  # All messages not matching "Home" mapped to "False"
+            self.var_topic_teslamate_geofence = False
 
-#    def on_message_plugged_in(self, client, userdata, msg):
-#        logging.debug(msg.payload.decode('utf-8'))
-#        if msg.payload.decode("utf-8") == "true":
-#            if (not self.var_topic_teslamate_plugged_in) and self.var_topic_prevent_non_solar_charge:
-#                # If previous state was False, and prevent_non_solar_charge is True, stop charging immediately
-#                time.sleep(4)    # Delay to ensure success of the stop command
-#                if self.car_cmd.stop_charging() == True:
-#                    logging.info("Charging stopped upon plugin, prevent_non_solar_charge active")
-#                else:
-#                    logging.warning("Charging NOT stopped upon plugin, prevent_non_solar_charge active")
-#            self.var_topic_teslamate_plugged_in = True
-#        else:
-#            self.var_topic_teslamate_plugged_in = False
-#
-#    def on_message_battery_level(self, client, userdata, msg):
-#        logging.debug(msg.payload.decode('utf-8'))
-#        self.var_topic_teslamate_battery_level = int(msg.payload.decode("utf-8"))
-#
-#    def on_message_charge_limit_soc(self, client, userdata, msg):
-#        logging.debug(msg.payload.decode('utf-8'))
-#        self.var_topic_teslamate_charge_limit_soc = int(msg.payload.decode("utf-8"))
-#
-#    def on_message_state(self, client, userdata, msg):
-#        logging.debug(msg.payload.decode('utf-8'))
-#        self.var_topic_teslamate_state = msg.payload.decode("utf-8")
-#
-#    def calculate_charge_tesla(self):
-#        # Charge if: Car is at Home, Car is plugged in, and battery < charge_limit_soc
-#        if (self.var_topic_teslamate_geofence & self.var_topic_teslamate_plugged_in &
-#                (self.var_topic_teslamate_battery_level < self.var_topic_teslamate_charge_limit_soc)):
-#            return True
-#        else:
-#            return False
+    def on_message_plugged_in(self, client, userdata, msg):
+        logging.debug(msg.payload.decode('utf-8'))
+        if msg.payload.decode("utf-8") == "true":
+            if (not self.var_topic_teslamate_plugged_in) and self.var_topic_prevent_non_solar_charge:
+                # If previous state was False, and prevent_non_solar_charge is True, stop charging immediately
+                time.sleep(4)    # Delay to ensure success of the stop command
+                if self.car_cmd.stop_charging() == True:
+                    logging.info("Charging stopped upon plugin, prevent_non_solar_charge active")
+                else:
+                    logging.warning("Charging NOT stopped upon plugin, prevent_non_solar_charge active")
+            self.var_topic_teslamate_plugged_in = True
+        else:
+            self.var_topic_teslamate_plugged_in = False
+
+    def on_message_battery_level(self, client, userdata, msg):
+        logging.debug(msg.payload.decode('utf-8'))
+        self.var_topic_teslamate_battery_level = int(msg.payload.decode("utf-8"))
+
+    def on_message_charge_limit_soc(self, client, userdata, msg):
+        logging.debug(msg.payload.decode('utf-8'))
+        self.var_topic_teslamate_charge_limit_soc = int(msg.payload.decode("utf-8"))
+
+    def on_message_state(self, client, userdata, msg):
+        logging.debug(msg.payload.decode('utf-8'))
+        self.var_topic_teslamate_state = msg.payload.decode("utf-8")
+
+    def calculate_charge_tesla(self):
+        # Charge if: Car is at Home, Car is plugged in, and battery < charge_limit_soc
+        if (self.var_topic_teslamate_geofence & self.var_topic_teslamate_plugged_in &
+                (self.var_topic_teslamate_battery_level < self.var_topic_teslamate_charge_limit_soc)):
+            return True
+        else:
+            return False
 
     def calculate_charge_delay(self, loop_time):
         if (self.var_topic_charge_delay != 0 and self.var_charge_delay_time != 0):
