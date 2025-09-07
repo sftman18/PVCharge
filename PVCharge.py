@@ -37,13 +37,24 @@ else:
     logging.debug("Using TeslaCommands")
     Car = routines.TeslaCommands()
 
+# Initial poll for car statuses
+if Car.read_body_controller_state():
+    if Car.vehicleSleepStatus == "VEHICLE_SLEEP_STATUS_AWAKE":
+        if Car.read_charge_state():
+            logging.debug("Car awake, initial status read")
+        else:
+            logging.warning("Car awake, initial status NOT read")
+    else:
+        logging.debug("Car asleep, initial status read")
+else:
+    logging.warning("Failed to read intial car status")
+
 # Control loop variables
 car_is_charging = False
 stop_charging_time = 0
 start_charging_time = 0
 report_time = time.time() - config["REPORT_DELAY"]
 sample_time = time.time() - 60
-ble_timeout_count = 0
 while True:
     # Record loop start time
     loop_time = time.time()
@@ -114,6 +125,7 @@ while True:
                                 if Car.wake():
                                     logging.info("Car is NOT charging, Energy is Available, car woken successfully")
                                     time.sleep(5)    # Wait until car is awake
+                                    Car.read_charge_state()    # Ensure car status variables are properly updated
                                 else:
                                     logging.warning("Car was NOT woken successfully")
                             if Car.start_charging() == True:
@@ -180,25 +192,34 @@ while True:
 
     # Collect car status over Bluetooth at Slow polling rate
     sample_is_due, sample_time = routines.check_elapsed_time(loop_time, sample_time, config["SLOW_POLLING"])
-    if sample_is_due:
+    if sample_is_due and sun_up:    # Only take samples if the sun is up
         if Car.read_body_controller_state():
             if Car.vehicleSleepStatus == "VEHICLE_SLEEP_STATUS_AWAKE":
-                if Car.read_state_charge():
+                if Car.read_charge_state():
                     logging.debug(f"Charging State: {Car.chargingState}, Charge Port Door Open: {Car.chargePortDoorOpen}")
                     logging.debug(f"Charge Limit: {Car.chargeLimitSoc}, Battery Level: {Car.batteryLevel}")
+                    Messages.client.publish(topic=config["TOPIC_CHARGING_STATE"], payload=Car.chargingState, qos=1)
+                    Messages.client.publish(topic=config["TOPIC_CHARGE_PORT_DOOR_OPEN"], payload=Car.chargePortDoorOpen, qos=1)
+                    Messages.client.publish(topic=config["TOPIC_CHARGE_LIMIT_SOC"], payload=Car.chargeLimitSoc, qos=1)
+                    Messages.client.publish(topic=config["TOPIC_BATTERY_LEVEL"], payload=Car.batteryLevel, qos=1)
+                    Messages.client.publish(topic=config["TOPIC_CAR_NOT_HOME"], payload=False, qos=1)
                     logging.info("Collect Status, updated successfully")
-                    # Clear timeout counter
-                    ble_timeout_count = 0
                 else:
                     logging.warning("Collect Status, NOT updated")
-        else:    # We weren't able to contact the car
-            if ble_timeout_count > 4:
-                # We weren't able to contact the car 5 times, reset the variables
+            elif Car.ChargeStateReadSuccess == 0:    # We haven't successfully read since last reset, however car is present now
+                if Car.read_charge_state():
+                    logging.debug("Collect Status forced update, successful")
+                else:
+                    logging.warning("Collect Status forced update, NOT successful")
+        else:
+            car_not_home, Car.BodyControllerReadSuccess = routines.check_elapsed_time(loop_time, Car.BodyControllerReadSuccess, config["HOME_TIMEOUT"])
+            if car_not_home:
+                # We haven't heard from the car for too long, reset variables
+                logging.debug("Resetting car variables")
                 Car.reset_variables()
-                ble_timeout_count = 0
-                logging.debug("Collect Status, NOT successful over 5 attempts, Resetting Variables")
-            else:    # Increment the counter
-                ble_timeout_count += 1
+                Messages.client.publish(topic=config["TOPIC_CAR_NOT_HOME"], payload=True, qos=1)
+        sample_time = loop_time    # Reset counter for next loop
+    elif sample_is_due and (not sun_up):    # When sun is down just reset counter with no sample
         sample_time = loop_time    # Reset counter for next loop
 
     # Control loop delay
