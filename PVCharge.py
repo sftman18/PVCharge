@@ -37,16 +37,29 @@ else:
     logging.debug("Using TeslaCommands")
     Car = routines.TeslaCommands()
 
+# Initial poll for car statuses
+if Car.read_body_controller_state():
+    if Car.vehicleSleepStatus == "VEHICLE_SLEEP_STATUS_AWAKE":
+        if Car.read_charge_state():
+            logging.debug("Car awake, initial status read")
+        else:
+            logging.warning("Car awake, initial status NOT read")
+    else:
+        logging.debug("Car asleep, initial status read")
+else:
+    logging.warning("Failed to read intial car status")
+
 # Control loop variables
 car_is_charging = False
 stop_charging_time = 0
 start_charging_time = 0
 report_time = time.time() - config["REPORT_DELAY"]
+sample_time = time.time() - 60
 while True:
     # Record loop start time
     loop_time = time.time()
     # Check if we are allowed to charge
-    charge_tesla = Messages.calculate_charge_tesla()
+    charge_tesla = routines.calculate_charge_tesla(Car.chargePortDoorOpen, Car.batteryLevel, Car.chargeLimitSoc)
     sun_up = Energy.check_sun_up()
     charge_delay = Messages.calculate_charge_delay(loop_time)
     logging.debug(f"Current calculated charge enable: {charge_tesla}")
@@ -103,15 +116,16 @@ while True:
         else:    # Car isn't charging, should it be?
             if Energy.sufficient_generation(config["MIN_CHARGE"]):    # If we have enough sun to charge
                 if round(Energy.charge_rate_sensor) < config["MIN_CHARGE"]:	   # Make sure car isn’t already charging
-                    if ((Messages.var_topic_teslamate_charge_limit_soc - Messages.var_topic_teslamate_battery_level) > 1):    # If we are charging at least 1%
+                    if ((Car.chargeLimitSoc - Car.batteryLevel) > 1):    # If we are charging at least 1%
                         # Wait configured time before starting
                         waited_long_enough, start_charging_time = routines.check_elapsed_time(loop_time, start_charging_time, config["DELAYED_START_TIME"])
                         if waited_long_enough:
-                            wake_states = ["asleep", "suspended", "offline"]
-                            if Messages.var_topic_teslamate_state in wake_states:    # Only wake car if it's asleep
+                            wake_states = ["VEHICLE_SLEEP_STATUS_ASLEEP", "VEHICLE_SLEEP_STATUS_UNKNOWN"]
+                            if Car.vehicleSleepStatus in wake_states:    # Only wake car if it's asleep
                                 if Car.wake():
                                     logging.info("Car is NOT charging, Energy is Available, car woken successfully")
                                     time.sleep(5)    # Wait until car is awake
+                                    Car.read_charge_state()    # Ensure car status variables are properly updated
                                 else:
                                     logging.warning("Car was NOT woken successfully")
                             if Car.start_charging() == True:
@@ -147,8 +161,8 @@ while True:
 
     elif charge_delay or prevent_non_solar_charge:
             if car_is_charging:
-                if Messages.var_topic_teslamate_battery_level == Messages.var_topic_teslamate_charge_limit_soc:
-                    logging.info(f"Completed charge to: {Messages.var_topic_teslamate_charge_limit_soc}% limit, stopping charge")
+                if Car.batteryLevel == Car.chargeLimitSoc:
+                    logging.info(f"Completed charge to: {Car.chargeLimitSoc}% limit, stopping charge")
                 Car.set_charge_rate(config["MIN_CHARGE"])    # Set charge rate to min charge, to reset for next time
                 car_is_charging = False    # Always reset flag if set, actual charge rate is used to stop
 
@@ -175,6 +189,38 @@ while True:
         logging.info(f"{status}")
         Messages.client.publish(topic=config["TOPIC_STATUS"], payload=status, qos=1)
         report_time = loop_time    # Reset counter for next loop
+
+    # Collect car status over Bluetooth at Slow polling rate
+    sample_is_due, sample_time = routines.check_elapsed_time(loop_time, sample_time, config["SLOW_POLLING"])
+    if sample_is_due and sun_up:    # Only take samples if the sun is up
+        if Car.read_body_controller_state():
+            if Car.vehicleSleepStatus == "VEHICLE_SLEEP_STATUS_AWAKE":
+                if Car.read_charge_state():
+                    logging.debug(f"Charging State: {Car.chargingState}, Charge Port Door Open: {Car.chargePortDoorOpen}")
+                    logging.debug(f"Charge Limit: {Car.chargeLimitSoc}, Battery Level: {Car.batteryLevel}")
+                    Messages.client.publish(topic=config["TOPIC_CHARGING_STATE"], payload=Car.chargingState, qos=1)
+                    Messages.client.publish(topic=config["TOPIC_CHARGE_PORT_DOOR_OPEN"], payload=Car.chargePortDoorOpen, qos=1)
+                    Messages.client.publish(topic=config["TOPIC_CHARGE_LIMIT_SOC"], payload=Car.chargeLimitSoc, qos=1)
+                    Messages.client.publish(topic=config["TOPIC_BATTERY_LEVEL"], payload=Car.batteryLevel, qos=1)
+                    Messages.client.publish(topic=config["TOPIC_CAR_NOT_HOME"], payload=False, qos=1)
+                    logging.info("Collect Status, updated successfully")
+                else:
+                    logging.warning("Collect Status, NOT updated")
+            elif Car.ChargeStateReadSuccess == 0:    # We haven't successfully read since last reset, however car is present now
+                if Car.read_charge_state():
+                    logging.debug("Collect Status forced update, successful")
+                else:
+                    logging.warning("Collect Status forced update, NOT successful")
+        else:
+            car_not_home, Car.BodyControllerReadSuccess = routines.check_elapsed_time(loop_time, Car.BodyControllerReadSuccess, config["HOME_TIMEOUT"])
+            if car_not_home:
+                # We haven't heard from the car for too long, reset variables
+                logging.debug("Resetting car variables")
+                Car.reset_variables()
+                Messages.client.publish(topic=config["TOPIC_CAR_NOT_HOME"], payload=True, qos=1)
+        sample_time = loop_time    # Reset counter for next loop
+    elif sample_is_due and (not sun_up):    # When sun is down just reset counter with no sample
+        sample_time = loop_time    # Reset counter for next loop
 
     # Control loop delay
     time.sleep(config["FAST_POLLING"])

@@ -4,7 +4,7 @@ An adaptive charging controller for your Tesla, enabling you to direct excess so
 
 ## Requirements
 - <a href="https://www.tesla.com/">Tesla vehicle</a>
-- Configured <a href="https://github.com/teslamotors/vehicle-command">Tesla Vehicle Command SDK</a> environment with <a href="https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control">tesla-control</a> available OR use the <a href="https://github.com/wimaha/TeslaBleHttpProxy">TeslaBleHttpProxy</a> (NEW!)
+- Configured <a href="https://github.com/teslamotors/vehicle-command">Tesla Vehicle Command SDK</a> environment with <a href="https://github.com/teslamotors/vehicle-command/tree/main/cmd/tesla-control">tesla-control</a> available OR use the <a href="https://github.com/Lenart12/TeslaBleHttpProxy">TeslaBleHttpProxy</a> (Docker compose file <a href="https://github.com/Lenart12/TeslaBle2Mqtt?tab=readme-ov-file#option-2-docker-compose">here</a>)
 - <a href="https://github.com/teslamate-org/teslamate">TeslaMate</a>
 - <a href="https://www.egauge.net">eGauge solar monitoring</a> with a CT on the charger circuit
 - Linux computer with Bluetooth, such as a <a href="https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/">Raspberry Pi Zero 2 W</a>

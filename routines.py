@@ -6,6 +6,7 @@ import time
 import logging
 import tomllib
 import requests
+import json
 from dotenv import load_dotenv
 from egauge import webapi
 from egauge.webapi.device import Register, Local
@@ -136,6 +137,13 @@ class TeslaProxy:
         # Load parameters from .env
         self.tesla_vin = os.getenv("TESLA_VIN")
         self.tesla_proxy_host = os.getenv("PROXY_HOST")
+        self.vehicleSleepStatus = "VEHICLE_SLEEP_STATUS_UNKNOWN"
+        self.chargingState = "Disconnected"
+        self.chargeLimitSoc = 0
+        self.batteryLevel = 0
+        self.chargePortDoorOpen = False
+        self.ChargeStateReadSuccess = 0
+        self.BodyControllerReadSuccess = 0
         # Test for existence of TeslaBleHttpProxy
         if self.tesla_proxy_host == None:
             logging.critical("PROXY_HOST not configured")
@@ -148,42 +156,134 @@ class TeslaProxy:
         logging.debug(command)
         data = {}
         data["charging_amps"] = charge_rate
-        rc = call_http_post(command, data)
-        time.sleep(5)
+        rc = call_http_post(command, data, timeout=60)
+        if rc == 'Timeout':
+            logging.warning("TeslaProxy timed out")
+            return False
         return rc
 
     def start_charging(self):
         command = self.tesla_proxy_base_command + "charge_start"
         logging.debug(command)
         data = ""
-        return call_http_post(command, data)
+        rc = call_http_post(command, data, timeout=60)
+        if rc == 'Timeout':
+            logging.warning("TeslaProxy timed out")
+            return False
+        return rc
 
     def stop_charging(self):
         command = self.tesla_proxy_base_command + "charge_stop"
         logging.debug(command)
         data = ""
-        rc = call_http_post(command, data)
-        time.sleep(5)
+        rc = call_http_post(command, data, timeout=60)
+        if rc == 'Timeout':
+            logging.warning("TeslaProxy timed out")
+            return False
         return rc
 
     def wake(self):
         command = self.tesla_proxy_base_command + "wake_up"
         logging.debug(command)
         data = ""
-        return call_http_post(command, data)
+        rc = call_http_post(command, data, timeout=60)
+        if rc == 'Timeout':
+            logging.warning("TeslaProxy timed out")
+            return False
+        return rc
+
+    def read_charge_state(self):
+        command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/vehicle_data?endpoints=charge_state"
+        logging.debug(command)
+        result, output_dict = call_http_get(command, timeout=60)
+        if result == True:
+            self.ChargeStateReadSuccess = time.time()
+            for key in output_dict['charge_state']:
+                if key == "charging_state":
+                    # "charge_state": {"charging_state": "Stopped"}
+                    self.chargingState = output_dict['charge_state']['charging_state']
+                    logging.debug(f"Charging State: {self.chargingState}")
+                elif key == "charge_limit_soc":
+                    # "charge_state": {"charge_limit_soc": 80}
+                    self.chargeLimitSoc = output_dict['charge_state']['charge_limit_soc']
+                    logging.debug(f"Charge Limit: {self.chargeLimitSoc}")
+                elif key == "battery_level":
+                    # "charge_state": {"battery_level":  65}
+                    self.batteryLevel = output_dict['charge_state']['battery_level']
+                    logging.debug(f"Battery Level: {self.batteryLevel}")
+                elif key == "charge_port_door_open":
+                    # "charge_state": {"charge_port_door_open":  True}
+                    self.chargePortDoorOpen = output_dict['charge_state']['charge_port_door_open']
+                    logging.debug(f"Charge Port Door Open: {self.chargePortDoorOpen}")
+        return result
+
+    def read_body_controller_state(self):
+        # Lenart12's fork adds "proxy" after api for this command
+        command = self.tesla_proxy_host + "/api/proxy/1/vehicles/" + self.tesla_vin + "/body_controller_state"
+        logging.debug(command)
+        result, output_dict = call_http_get(command, timeout=60)
+        if result == True:
+            self.vehicleSleepStatus = output_dict["vehicle_sleep_status"]
+            self.BodyControllerReadSuccess = time.time()
+            logging.debug(f"Sleep Status: {self.vehicleSleepStatus}")
+        return result
+
+    def reset_variables(self):
+        # Reset car variables
+        self.vehicleSleepStatus = "VEHICLE_SLEEP_STATUS_UNKNOWN"
+        self.chargingState = "Disconnected"
+        self.chargeLimitSoc = 0
+        self.batteryLevel = 0
+        self.chargePortDoorOpen = False
+        self.ChargeStateReadSuccess = 0
+        self.BodyControllerReadSuccess = 0
+        return
 
 
+@timeoutable('Timeout')
 def call_http_post(cmd, data):
     if data == "":
         r = requests.post(url=cmd, data=data)
     else:
         r = requests.post(url=cmd, json=data)
+    result = r.json()
     if r.status_code == 200:    # good return code
-        result = r.json()
+        #result = r.json()
         logging.debug(result)
+        return result["response"]["result"]
     else:
-        logging.warning(result)
-    return result["response"]["result"]
+        http_error_handler(result["response"]["reason"])
+        return False
+
+@timeoutable('Timeout')
+def call_http_get(cmd):
+    r = requests.get(url=cmd)
+    data = r.json()
+    if r.status_code == 200:    # good return code
+        #data = r.json()
+        logging.debug(data)
+        return data["response"]["result"], data["response"]["response"]
+    else:
+        http_error_handler(data["response"]["reason"])
+        return False, ""
+
+def http_error_handler(reason):
+    if "context deadline exceeded" in reason:
+        # We have a match for the timeout error
+        logging.warning("Last Tesla command timed out")
+    elif "read/write on closed pipe" in reason:
+        # Match for ATT request failed read/write on closed pipe
+        logging.warning("Last Tesla command failed to connect over Bluetooth")
+    else:
+        logging.warning("Unknown error, note error output")
+        logging.warning(f"Error: {reason}")
+
+def calculate_charge_tesla(door_open, battery_level, charge_limit):
+    # Charge if: Car is plugged in (charge door open), and battery < charge_limit_soc
+    if (door_open & (battery_level < charge_limit)):
+        return True
+    else:
+        return False
 
 
 class TeslaCommands:
