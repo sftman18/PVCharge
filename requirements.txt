@@ -1,4 +1,4 @@
-egauge-python==0.9.5
+egauge-python==0.9.8
 paho-mqtt==2.1.0
 python-dotenv==1.1.1
 stopit==1.1.2
