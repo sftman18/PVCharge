@@ -31,14 +31,27 @@ class PowerUsage:
         self.eGauge_use = os.getenv("EGAUGE_USE")
         self.eGauge_charger = os.getenv("EGAUGE_CHARGER")
         self.eGauge_charger_sensor = os.getenv("EGAUGE_CHARGER_SENSOR")
+        self.eGauge_powerwall = ""
         self.register_sample = 0
         self.sensor_sample = 0
         self.generation_reg = 0
         self.usage_reg = 0
         self.tesla_charger_reg = 0
+        self.powerwall_charge_reg = 0
+        self.powerwall_enabled = 0
+        self.powerwall_highest_charge_priority = 0
+        self.powerwall_lowest_charge_priority = 0
         self.charge_rate_sensor = 0
         self.charger_voltage_sensor = 0
         self.new_charge_rate = 0
+        if "ENABLE_POWERWALL" in config:
+            if config["ENABLE_POWERWALL"] == "True":
+                self.powerwall_enabled = 1
+                self.eGauge_powerwall = os.getenv("EGAUGE_POWERWALL")
+                self.powerwall_highest_charge_priority = config["HIGHEST_CHARGE_PRIORITY"]
+                self.powerwall_lowest_charge_priority = config["LOWEST_CHARGE_PRIORITY"]
+                if self.powerwall_highest_charge_priority > self.powerwall_lowest_charge_priority:
+                    logging.critical(f"config.toml problem!, Powerwall charge priority incorrect! High priority:{self.powerwall_highest_charge_priority}, must be less than Low priority:{self.powerwall_lowest_charge_priority}")
 
         # Initialize eGauge
         self.my_eGauge = webapi.device.Device(self.meter_dev, webapi.JWTAuth(self.meter_user, self.meter_password))
@@ -61,6 +74,9 @@ class PowerUsage:
         logging.debug(f"        Usage reg: {self.usage_reg:.0f}")
         self.tesla_charger_reg = self.register_sample.pq_rate(self.eGauge_charger).value * 1000
         logging.debug(f"Tesla charger reg: {self.tesla_charger_reg:.0f}")
+        if self.powerwall_enabled:
+            self.powerwall_charge_reg = self.register_sample.pq_rate(self.eGauge_powerwall).value * 1000
+            logging.debug(f"Powerwall charge reg: {self.powerwall_charge_reg:.0f}")
 
     @timeoutable('Timeout')
     def sample_sensor(self):
@@ -71,7 +87,7 @@ class PowerUsage:
         self.charge_rate_sensor = self.sensor_sample.rate(self.eGauge_charger_sensor, "n")
         logging.debug(f"     Charge rate sensor: {self.charge_rate_sensor:.2f}")
 
-    def calculate_charge_rate(self, new_sample):
+    def calculate_charge_rate(self, new_sample, battery_level):
         if new_sample:
             if self.sample_register(timeout=30) == 'Timeout':
                 logging.warning("eGauge Register read timed out")
@@ -80,8 +96,19 @@ class PowerUsage:
                 logging.warning("eGauge Sensor read timed out")
                 return self.new_charge_rate
         # Calculate the charge rate
-        self.new_charge_rate = ((self.generation_reg - (self.usage_reg - self.tesla_charger_reg)) /
-                                self.charger_voltage_sensor)
+        if self.powerwall_enabled:
+            if self.powerwall_charge_reg >= 0:
+                self.pw_charge_rate_priority = self.calculate_pw_charge_rate_priority(battery_level=battery_level)
+                raw_charge_rate = ((self.generation_reg - (self.usage_reg - self.tesla_charger_reg - self.powerwall_charge_reg)) /
+                                        self.charger_voltage_sensor)
+                self.new_charge_rate = raw_charge_rate * self.pw_charge_rate_priority
+                logging.debug(f"Powerwall unadjusted charge rate: {raw_charge_rate:.2f}")
+            else:    # Powerwall is discharging, stop charging immediately
+                logging.debug("Powerwall is discharging, stop charging immediately")
+                self.new_charge_rate = -9999
+        else:
+            self.new_charge_rate = ((self.generation_reg - (self.usage_reg - self.tesla_charger_reg)) /
+                                    self.charger_voltage_sensor)
         logging.debug(f"New charge rate: {self.new_charge_rate:.2f}")
         return self.new_charge_rate
 
@@ -97,8 +124,8 @@ class PowerUsage:
         logging.debug("New charge rate NOT verified")
         return False
 
-    def sufficient_generation(self, min_charge):
-        charge_rate = math.floor(self.calculate_charge_rate(new_sample=True))
+    def sufficient_generation(self, min_charge, battery_level):
+        charge_rate = math.floor(self.calculate_charge_rate(new_sample=True, battery_level=battery_level))
         logging.debug(f"New charge rate (floor): {charge_rate}")
         if charge_rate >= min_charge:
             return True
@@ -110,6 +137,17 @@ class PowerUsage:
             return True
         else:
             return False
+
+    def calculate_pw_charge_rate_priority(self, battery_level):
+        # Linearly scale priority based on need
+        charge_priority = (self.powerwall_lowest_charge_priority - battery_level)/(self.powerwall_lowest_charge_priority - self.powerwall_highest_charge_priority)
+        # Bounds check result
+        if charge_priority > 1:
+            charge_priority = 1
+        elif charge_priority < 0:
+            charge_priority = 0
+        logging.debug(f"Powerwall Charge Priority: {charge_priority}")
+        return charge_priority
 
     def status_report(self, charge_tesla, charge_delay, sun_up, car_is_charging, new_sample):
         if new_sample:

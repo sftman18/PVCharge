@@ -69,13 +69,13 @@ while True:
 
     if ((charge_tesla and sun_up) and not charge_delay):    # If we are allowed to charge
         if car_is_charging:    # Is the car currently charging?
-            if Energy.sufficient_generation(config["MIN_CHARGE"]):
+            if Energy.sufficient_generation(config["MIN_CHARGE"], battery_level=Car.batteryLevel):
                 # Reset stop time
                 stop_charging_time = 0
                 # Calculate new charge rate
                 # Use math.floor() on calculate_charge_rate to ensure we are always just "under" the available PV generation capacity
                 # Use round() on charge_rate_sensor to prevent constant requests when on the edge of a value
-                new_charge_rate = math.floor(Energy.calculate_charge_rate(new_sample=False))
+                new_charge_rate = math.floor(Energy.calculate_charge_rate(new_sample=False, battery_level=Car.batteryLevel))
                 logging.debug(f"Car charging, new rate calculated: {new_charge_rate}, current rate: {round(Energy.charge_rate_sensor)}")
                 if (new_charge_rate != round(Energy.charge_rate_sensor)) and (round(Energy.charge_rate_sensor) != 0):
                     # Set new charge rate
@@ -87,34 +87,44 @@ while True:
                         logging.warning("Car charging, new rate was NOT successfully set")
 
             else:    # We don't have enough sun
-                if round(Energy.charge_rate_sensor) > config["MIN_CHARGE"]:    # If we are charging at anything greater than min charge
-                    # Set charge rate to min charge
-                    if Car.set_charge_rate(config["MIN_CHARGE"]) == True:
-                        logging.info(f"Car charging, Available Energy Reduced, new rate: {config['MIN_CHARGE']} successfully set")
-                        Messages.client.publish(topic=config["TOPIC_CHARGE_RATE"], payload=config["MIN_CHARGE"], qos=1)
+                if Energy.new_charge_rate == -9999:    # Key value indicating that Powerwall is discharging
+                    #Stop charging immediately
+                    if Car.stop_charging() == True:
+                        logging.info("Car charging, Powerwall Discharging, charging was successfully stopped")
+                        car_is_charging = False
+                        stop_charging_time = 0
                     else:
-                        logging.warning("Car charging, Available Energy Reduced, new rate was NOT successfully set")
+                        logging.warning("Car charging, Powerwall Discharging, charging was NOT successfully stopped")
 
-                else:    # We are already at min charge
-                    # Wait configured time before stopping
-                    waited_long_enough, stop_charging_time = routines.check_elapsed_time(loop_time, stop_charging_time, config["DELAYED_STOP_TIME"])
-                    if waited_long_enough:
-                        if Car.stop_charging() == True:
-                            logging.info("Car charging, Available Energy Reduced, charging was successfully stopped")
-                            car_is_charging = False
-                            stop_charging_time = 0
+                else:
+                    if round(Energy.charge_rate_sensor) > config["MIN_CHARGE"]:    # If we are charging at anything greater than min charge
+                        # Set charge rate to min charge
+                        if Car.set_charge_rate(config["MIN_CHARGE"]) == True:
+                            logging.info(f"Car charging, Available Energy Reduced, new rate: {config['MIN_CHARGE']} successfully set")
+                            Messages.client.publish(topic=config["TOPIC_CHARGE_RATE"], payload=config["MIN_CHARGE"], qos=1)
                         else:
-                            if round(Energy.charge_rate_sensor) < config["MIN_CHARGE"]:    # Catch case where stop charging is failing due to charging already being stopped
-                                logging.info("Car charging was already stopped, resetting flags")
+                            logging.warning("Car charging, Available Energy Reduced, new rate was NOT successfully set")
+
+                    else:    # We are already at min charge
+                        # Wait configured time before stopping
+                        waited_long_enough, stop_charging_time = routines.check_elapsed_time(loop_time, stop_charging_time, config["DELAYED_STOP_TIME"])
+                        if waited_long_enough:
+                            if Car.stop_charging() == True:
+                                logging.info("Car charging, Available Energy Reduced, charging was successfully stopped")
                                 car_is_charging = False
                                 stop_charging_time = 0
                             else:
-                                logging.warning("Car charging, Available Energy Reduced, charging was NOT successfully stopped")
-                    else:
-                        logging.info(f"Car charging, Available Energy Reduced, charging at min rate, stopping in: {round(config['DELAYED_STOP_TIME'] - (loop_time - stop_charging_time))} seconds")
+                                if round(Energy.charge_rate_sensor) < config["MIN_CHARGE"]:    # Catch case where stop charging is failing due to charging already being stopped
+                                    logging.info("Car charging was already stopped, resetting flags")
+                                    car_is_charging = False
+                                    stop_charging_time = 0
+                                else:
+                                    logging.warning("Car charging, Available Energy Reduced, charging was NOT successfully stopped")
+                        else:
+                            logging.info(f"Car charging, Available Energy Reduced, charging at min rate, stopping in: {round(config['DELAYED_STOP_TIME'] - (loop_time - stop_charging_time))} seconds")
 
         else:    # Car isn't charging, should it be?
-            if Energy.sufficient_generation(config["MIN_CHARGE"]):    # If we have enough sun to charge
+            if Energy.sufficient_generation(config["MIN_CHARGE"], battery_level=Car.batteryLevel):    # If we have enough sun to charge
                 if round(Energy.charge_rate_sensor) < config["MIN_CHARGE"]:	   # Make sure car isn’t already charging
                     if ((Car.chargeLimitSoc - Car.batteryLevel) > 1):    # If we are charging at least 1%
                         # Wait configured time before starting
