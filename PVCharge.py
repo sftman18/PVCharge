@@ -69,7 +69,7 @@ while True:
 
     if ((charge_tesla and sun_up) and not charge_delay):    # If we are allowed to charge
         if car_is_charging:    # Is the car currently charging?
-            if Energy.sufficient_generation(config["MIN_CHARGE"], battery_level=Car.batteryLevel):
+            if Energy.sufficient_generation(config["MIN_CHARGE"], Car.batteryLevel):
                 # Reset stop time
                 stop_charging_time = 0
                 # Calculate new charge rate
@@ -124,7 +124,7 @@ while True:
                             logging.info(f"Car charging, Available Energy Reduced, charging at min rate, stopping in: {round(config['DELAYED_STOP_TIME'] - (loop_time - stop_charging_time))} seconds")
 
         else:    # Car isn't charging, should it be?
-            if Energy.sufficient_generation(config["MIN_CHARGE"], battery_level=Car.batteryLevel):    # If we have enough sun to charge
+            if Energy.sufficient_generation(config["MIN_CHARGE"], Car.batteryLevel):    # If we have enough sun to charge
                 if round(Energy.charge_rate_sensor) < config["MIN_CHARGE"]:	   # Make sure car isn’t already charging
                     if ((Car.chargeLimitSoc - Car.batteryLevel) > 1):    # If we are charging at least 1%
                         # Wait configured time before starting
@@ -195,7 +195,7 @@ while True:
     # Wait configured time before reporting status
     report_is_due, report_time = routines.check_elapsed_time(loop_time, report_time, config["REPORT_DELAY"])
     if report_is_due:
-        status = Energy.status_report(charge_tesla, charge_delay, sun_up, car_is_charging, new_sample=True)
+        status = Energy.status_report(charge_tesla, charge_delay, sun_up, car_is_charging, True, Car.batteryLevel)
         logging.info(f"{status}")
         Messages.client.publish(topic=config["TOPIC_STATUS"], payload=status, qos=1)
         report_time = loop_time    # Reset counter for next loop

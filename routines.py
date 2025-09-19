@@ -38,7 +38,7 @@ class PowerUsage:
         self.usage_reg = 0
         self.tesla_charger_reg = 0
         self.powerwall_charge_reg = 0
-        self.powerwall_enabled = 0
+        self.powerwall_enabled = False
         self.powerwall_highest_charge_priority = 0
         self.powerwall_lowest_charge_priority = 0
         self.charge_rate_sensor = 0
@@ -46,7 +46,7 @@ class PowerUsage:
         self.new_charge_rate = 0
         if "ENABLE_POWERWALL" in config:
             if config["ENABLE_POWERWALL"] == "True":
-                self.powerwall_enabled = 1
+                self.powerwall_enabled = True
                 self.eGauge_powerwall = os.getenv("EGAUGE_POWERWALL")
                 self.powerwall_highest_charge_priority = config["HIGHEST_CHARGE_PRIORITY"]
                 self.powerwall_lowest_charge_priority = config["LOWEST_CHARGE_PRIORITY"]
@@ -104,7 +104,6 @@ class PowerUsage:
                 self.new_charge_rate = raw_charge_rate * self.pw_charge_rate_priority
                 logging.debug(f"Powerwall unadjusted charge rate: {raw_charge_rate:.2f}")
             else:    # Powerwall is discharging, stop charging immediately
-                logging.debug("Powerwall is discharging, stop charging immediately")
                 self.new_charge_rate = -9999
         else:
             self.new_charge_rate = ((self.generation_reg - (self.usage_reg - self.tesla_charger_reg)) /
@@ -149,9 +148,9 @@ class PowerUsage:
         logging.debug(f"Powerwall Charge Priority: {charge_priority}")
         return charge_priority
 
-    def status_report(self, charge_tesla, charge_delay, sun_up, car_is_charging, new_sample):
+    def status_report(self, charge_tesla, charge_delay, sun_up, car_is_charging, new_sample, battery_level):
         if new_sample:
-            self.calculate_charge_rate(new_sample)
+            self.calculate_charge_rate(new_sample,battery_level)
         # Build status string
         status = "Status: "
         if ((charge_tesla and sun_up) and not charge_delay):
