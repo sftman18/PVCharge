@@ -220,7 +220,8 @@ class TeslaProxy:
         return rc
 
     def wake(self):
-        command = self.tesla_proxy_base_command + "wake_up"
+        # Lenart12's fork moved "wake_up" out of the "command" catagory, matching the Fleet API
+        command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/wake_up"
         logging.debug(command)
         data = ""
         rc = call_http_post(command, data, timeout=60)
