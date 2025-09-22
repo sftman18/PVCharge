@@ -98,13 +98,13 @@ class PowerUsage:
         # Calculate the charge rate
         if self.powerwall_enabled:
             if self.powerwall_charge_reg >= 0:
-                self.pw_charge_rate_priority = self.calculate_pw_charge_rate_priority(battery_level=battery_level)
+                self.pw_charge_rate_priority = self.calculate_pw_charge_rate_priority(battery_level)
                 raw_charge_rate = ((self.generation_reg - (self.usage_reg - self.tesla_charger_reg - self.powerwall_charge_reg)) /
                                         self.charger_voltage_sensor)
                 self.new_charge_rate = raw_charge_rate * self.pw_charge_rate_priority
-                logging.debug(f"Powerwall unadjusted charge rate: {raw_charge_rate:.2f}")
-            else:    # Powerwall is discharging, stop charging immediately
-                self.new_charge_rate = -9999
+                logging.debug(f"Unadjusted charge rate: {raw_charge_rate:.2f}")
+            else:    # Powerwall is discharging
+                self.new_charge_rate = -9999    # Set key value to indicate that Powerwall is discharging
         else:
             self.new_charge_rate = ((self.generation_reg - (self.usage_reg - self.tesla_charger_reg)) /
                                     self.charger_voltage_sensor)
@@ -145,7 +145,7 @@ class PowerUsage:
             charge_priority = 1
         elif charge_priority < 0:
             charge_priority = 0
-        logging.debug(f"Powerwall Charge Priority: {charge_priority}")
+        logging.debug(f"Tesla Charge Priority over Powerwall: {charge_priority:.0%}")
         return charge_priority
 
     def status_report(self, charge_tesla, charge_delay, sun_up, car_is_charging, new_sample, battery_level):
@@ -220,7 +220,7 @@ class TeslaProxy:
         return rc
 
     def wake(self):
-        # Lenart12's fork moved "wake_up" out of the "command" catagory, matching the Fleet API
+        # Lenart12's fork moved "wake_up" out of the "command" category, matching the Fleet API
         command = self.tesla_proxy_host + "/api/1/vehicles/" + self.tesla_vin + "/wake_up"
         logging.debug(command)
         data = ""

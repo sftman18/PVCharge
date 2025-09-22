@@ -52,6 +52,7 @@ else:
 # Control loop variables
 car_is_charging = False
 stop_charging_time = 0
+PW_discharge_seen = False
 start_charging_time = 0
 report_time = time.time() - config["REPORT_DELAY"]
 sample_time = time.time() - 60
@@ -72,6 +73,7 @@ while True:
             if Energy.sufficient_generation(config["MIN_CHARGE"], Car.batteryLevel):
                 # Reset stop time
                 stop_charging_time = 0
+                PW_discharge_seen = False
                 # Calculate new charge rate
                 # Use math.floor() on calculate_charge_rate to ensure we are always just "under" the available PV generation capacity
                 # Use round() on charge_rate_sensor to prevent constant requests when on the edge of a value
@@ -88,13 +90,21 @@ while True:
 
             else:    # We don't have enough sun
                 if Energy.new_charge_rate == -9999:    # Key value indicating that Powerwall is discharging
-                    #Stop charging immediately
-                    if Car.stop_charging() == True:
-                        logging.info("Car charging, Powerwall Discharging, charging was successfully stopped")
-                        car_is_charging = False
-                        stop_charging_time = 0
+                    if PW_discharge_seen:
+                        # Stop charging after the second PW discharging indication
+                        if Car.stop_charging() == True:
+                            logging.info("Car charging, Powerwall Discharging, charging was successfully stopped")
+                            car_is_charging = False
+                            stop_charging_time = 0
+                            PW_discharge_seen = False
+                        else:
+                            logging.warning("Car charging, Powerwall Discharging, charging was NOT successfully stopped")
                     else:
-                        logging.warning("Car charging, Powerwall Discharging, charging was NOT successfully stopped")
+                        # Record that we have seen the PW discharging
+                        PW_discharge_seen = True
+                        Car.set_charge_rate(config["MIN_CHARGE"])    # Set charge rate to min charge, to reset for next time
+                        logging.debug("Car charging, Powerwall seen discharging once, setting charge to min rate")
+                        time.sleep(1)    # Delay to deglitch spikes
 
                 else:
                     if round(Energy.charge_rate_sensor) > config["MIN_CHARGE"]:    # If we are charging at anything greater than min charge
@@ -161,6 +171,7 @@ while True:
                 if prevent_non_solar_charge:    # If true, prevent after-hours charging
                     if round(Energy.charge_rate_sensor) >= config["MIN_CHARGE"]:
                         if Car.stop_charging() == True:  # Stop if it is charging
+                            Car.set_charge_rate(config["MIN_CHARGE"])    # Set charge rate to min charge, to reset for next time
                             logging.info("Fast poll, Car discovered charging and was stopped successfully")
                         else:
                             logging.warning("Fast poll, Car discovered charging and was NOT stopped successfully")
